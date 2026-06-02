@@ -13,7 +13,9 @@ import {
   Globe,
   Compass,
   Code,
-  RefreshCw
+  RefreshCw,
+  Briefcase,
+  MapPin
 } from 'lucide-react';
 
 // Technical configuration required by user
@@ -27,6 +29,7 @@ export default function App() {
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [startups, setStartups] = useState([]);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [logoErrors, setLogoErrors] = useState({});
 
   // References
   const workspaceRef = useRef(null);
@@ -59,6 +62,7 @@ export default function App() {
     if (isDiscovering) return;
     setIsDiscovering(true);
     setStartups([]);
+    setLogoErrors({});
     
     // Clear logs and push initiation logs
     setLogs([
@@ -349,66 +353,107 @@ export default function App() {
             ) : startups.length > 0 ? (
               /* Startup Cards list */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {startups.map((startup, index) => (
-                  <div 
-                    key={index} 
-                    className="group relative flex flex-col justify-between p-6 rounded-2xl border border-zinc-800/80 bg-zinc-900/20 hover:bg-zinc-900/40 hover:border-zinc-700/80 transition-all duration-300 hover:scale-[1.01]"
-                  >
-                    <div>
-                      {/* Header info */}
-                      <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
-                        <h4 className="text-lg font-bold text-zinc-100 group-hover:text-indigo-300 transition-colors">
-                          {startup.name}
-                        </h4>
-                        {/* Batch badge */}
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 text-right">
-                          {startup.batch}
-                        </span>
-                      </div>
-  
-                      {/* AI Summary */}
-                      <div className="relative rounded-xl border border-zinc-800/50 bg-black/35 p-4 font-sans text-sm text-zinc-300 leading-relaxed mb-4">
-                        <div className="absolute top-4 left-4 text-indigo-500/30">
-                          <Code className="w-4 h-4" />
+                {startups.map((startup, index) => {
+                  const hasLogo = startup.logo && !logoErrors[index];
+                  return (
+                    <div 
+                      key={index} 
+                      className="group relative flex flex-col justify-between p-6 rounded-2xl border border-zinc-800/80 bg-zinc-900/20 hover:bg-zinc-900/40 hover:border-zinc-700/80 transition-all duration-300 hover:scale-[1.01] shadow-xl backdrop-blur-md"
+                    >
+                      <div>
+                        {/* Header info */}
+                        <div className="flex justify-between items-start gap-4 mb-4">
+                          <div className="flex items-center gap-3">
+                            {hasLogo ? (
+                              <img 
+                                src={startup.logo} 
+                                alt={`${startup.name} logo`} 
+                                onError={() => setLogoErrors(prev => ({ ...prev, [index]: true }))}
+                                className="w-12 h-12 rounded-xl object-contain bg-zinc-950 border border-zinc-800 p-1.5 flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
+                                {startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}
+                              </div>
+                            )}
+                            <div>
+                              <h4 className="text-base font-bold text-zinc-100 group-hover:text-indigo-300 transition-colors">
+                                {startup.name}
+                              </h4>
+                              <span className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-3 h-3 text-indigo-500/70" />
+                                {startup.contact_location}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Badges block */}
+                          <div className="flex flex-col items-end gap-1.5">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 whitespace-nowrap">
+                              {startup.batch}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shadow-sm">
+                              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
+                              🔥 Hiring/Active
+                            </span>
+                          </div>
                         </div>
-                        <p className="pl-6 font-light">{startup.summary}</p>
+    
+                        {/* AI Summary */}
+                        <div className="relative rounded-xl border border-zinc-800/50 bg-black/35 p-4 font-sans text-sm text-zinc-300 leading-relaxed mb-4">
+                          <div className="absolute top-4 left-4 text-indigo-500/30">
+                            <Code className="w-4 h-4" />
+                          </div>
+                          <p className="pl-6 font-light">{startup.AI_summary}</p>
+                        </div>
+                      </div>
+
+                      {/* Card Actions */}
+                      <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-zinc-900/40 mt-auto">
+                        {startup.website ? (
+                          <a 
+                            href={startup.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-indigo-400 transition-colors font-medium hover:underline"
+                          >
+                            <span>🌐 Visit Main Website</span>
+                          </a>
+                        ) : (
+                          <span className="text-xs text-zinc-600">No website</span>
+                        )}
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCopySummary(startup.AI_summary, index)}
+                            className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors py-2 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800"
+                            title="Copy Summary"
+                          >
+                            {copiedIndex === index ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+
+                          {startup.jobs_url ? (
+                            <a 
+                              href={startup.jobs_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 py-2 px-4 rounded-xl shadow-lg shadow-indigo-600/10 hover:scale-[1.02] border border-indigo-500/30"
+                            >
+                              <span>💼 Apply to Startup</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          ) : (
+                            <span className="text-xs text-zinc-500">Applications Closed</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-
-                    {/* Card Actions */}
-                    <div className="flex justify-between items-center pt-4 border-t border-zinc-900/40 mt-auto">
-                      {startup.website ? (
-                        <a 
-                          href={startup.website} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-all duration-200 py-1.5 px-3 rounded-lg shadow-sm"
-                        >
-                          <span>Visit Website</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-xs text-zinc-600">No website</span>
-                      )}
-                      <button
-                        onClick={() => handleCopySummary(startup.summary, index)}
-                        className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors py-1.5 px-2.5 rounded bg-zinc-950 hover:bg-zinc-900 border border-zinc-800"
-                      >
-                        {copiedIndex === index ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-emerald-400 font-medium">Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy Summary</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               /* Empty state placeholder */
