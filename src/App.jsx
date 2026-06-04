@@ -110,6 +110,8 @@ export default function App() {
   const [startups, setStartups] = useState([]);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [logoErrors, setLogoErrors] = useState({});
+  const [selectedCountry, setSelectedCountry] = useState('All');
+  const [hasSearched, setHasSearched] = useState(false);
 
   // References
   const workspaceRef = useRef(null);
@@ -138,15 +140,18 @@ export default function App() {
   };
 
   // Trigger Startup Discovery Pipeline
-  const handleDiscoverStartups = async () => {
+  const handleDiscoverStartups = async (countryParam) => {
     if (isDiscovering) return;
     setIsDiscovering(true);
     setStartups([]);
     setLogoErrors({});
+    setHasSearched(true);
     
+    const targetCountry = (typeof countryParam === 'string') ? countryParam : selectedCountry;
+
     // Clear logs and push initiation logs
     setLogs([
-      { text: '// Initializing YC Startup Discovery Pipeline...', type: 'info', time: new Date().toLocaleTimeString() }
+      { text: `// Initializing YC Startup Discovery Pipeline (Region: ${targetCountry})...`, type: 'info', time: new Date().toLocaleTimeString() }
     ]);
 
     // Simulated log timeline to make it feel extremely interactive
@@ -154,7 +159,7 @@ export default function App() {
       { text: 'Connecting to live Y Combinator Open Source Index...', delay: 600, type: 'info' },
       { text: 'Downloading database payload from yc-oss.github.io...', delay: 1400, type: 'info' },
       { text: 'Filtering list for Active startups (Status: "Active")...', delay: 2400, type: 'info' },
-      { text: 'Sieving priority technology sectors: AI, Robotics, and Dev Tools...', delay: 3500, type: 'info' },
+      { text: `Sieving regional tech candidates matching "${targetCountry}"...`, delay: 3500, type: 'info' },
       { text: 'Selecting 5 dynamic candidates and running Gemini 3.1 Flash-Lite engine...', delay: 4800, type: 'success' }
     ];
 
@@ -165,7 +170,7 @@ export default function App() {
     });
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/discover-startups`);
+      const response = await fetch(`${BACKEND_URL}/api/discover-startups?country=${targetCountry}`);
       const data = await response.json();
 
       setTimeout(() => {
@@ -199,6 +204,11 @@ export default function App() {
       }, 5500);
     }
   };
+
+  // Auto-fetch whenever selectedCountry changes
+  useEffect(() => {
+    handleDiscoverStartups(selectedCountry);
+  }, [selectedCountry]);
 
   const handleCopySummary = async (text, index) => {
     if (!text) return;
@@ -400,16 +410,35 @@ export default function App() {
           <div className="lg:col-span-8 space-y-6">
             
             {/* Header for board */}
-            <div className="flex justify-between items-center px-1">
-              <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1 pb-2">
+              <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-indigo-400" />
-                Discovery Board
-              </h3>
-              {startups.length > 0 && (
-                <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 animate-pulse">
-                  5 Candidates Analyzed
-                </span>
-              )}
+                <h3 className="text-lg font-semibold text-zinc-200">
+                  Discovery Board
+                </h3>
+              </div>
+              
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-mono text-zinc-500">Region:</span>
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="bg-zinc-900 border border-zinc-800 text-zinc-350 text-xs font-medium rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2 px-3 focus:outline-none transition-all cursor-pointer hover:bg-zinc-850 hover:border-zinc-700"
+                >
+                  <option value="All">All Regions</option>
+                  <option value="United States">United States</option>
+                  <option value="India">India</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Singapore">Singapore</option>
+                  <option value="Germany">Germany</option>
+                </select>
+                {startups.length > 0 && (
+                  <span className="text-xs font-mono text-indigo-450 bg-indigo-500/10 px-2.5 py-1.5 rounded border border-indigo-500/20 animate-pulse whitespace-nowrap">
+                    {startups.length} Candidates
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Display states */}
@@ -536,9 +565,22 @@ export default function App() {
                   );
                 })}
               </div>
+            ) : hasSearched ? (
+              /* No results empty state */
+              <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/5 min-h-[300px] space-y-4 w-full">
+                <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500">
+                  <Compass className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-semibold text-zinc-300">No regional candidates found</h4>
+                  <p className="text-xs text-zinc-500 max-w-xs leading-relaxed font-light">
+                    No active startups found in this region for the current batch. Try another country!
+                  </p>
+                </div>
+              </div>
             ) : (
-              /* Empty state placeholder */
-              <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/5 min-h-[300px] space-y-4">
+              /* Initial state empty placeholder */
+              <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/5 min-h-[300px] space-y-4 w-full">
                 <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500">
                   <Compass className="w-6 h-6 animate-pulse" />
                 </div>
