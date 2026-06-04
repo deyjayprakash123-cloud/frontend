@@ -18,6 +18,86 @@ import {
   MapPin
 } from 'lucide-react';
 
+// Utility function to extract owner and repo from a GitHub URL
+function parseGithubUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const cleanUrl = url.trim().replace(/\/+$/, "");
+    const match = cleanUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/i);
+    if (match && match[1] && match[2]) {
+      return {
+        owner: match[1],
+        repo: match[2].replace(/\.git$/, "")
+      };
+    }
+  } catch (e) {
+    console.error("Error parsing GitHub URL:", e);
+  }
+  return null;
+}
+
+// Mini-component to display live repository stats on startup cards
+function GithubPulse({ github_url }) {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    const parsed = parseGithubUrl(github_url);
+    if (!parsed) {
+      setStats(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function fetchRepoStats() {
+      try {
+        const response = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`);
+        if (!response.ok) {
+          throw new Error(`GitHub API returned status ${response.status}`);
+        }
+        const data = await response.json();
+        if (isMounted) {
+          setStats({
+            stars: data.stargazers_count,
+            forks: data.forks_count,
+            issues: data.open_issues_count
+          });
+        }
+      } catch (err) {
+        // Silently catch errors/rate limits
+        if (isMounted) {
+          setStats(null);
+        }
+      }
+    }
+
+    fetchRepoStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [github_url]);
+
+  if (!stats) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap justify-end">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Stars">
+        <span>⭐</span>
+        <span>{stats.stars.toLocaleString()}</span>
+      </span>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Forks">
+        <span>🍴</span>
+        <span>{stats.forks.toLocaleString()}</span>
+      </span>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Open Issues">
+        <span>🚨</span>
+        <span>{stats.issues.toLocaleString()}</span>
+      </span>
+    </div>
+  );
+}
+
 // Technical configuration required by user
 const BACKEND_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://link-backend-o76j.onrender.com';
 
@@ -392,6 +472,7 @@ export default function App() {
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 whitespace-nowrap">
                               {startup.batch}
                             </span>
+                            <GithubPulse github_url={startup.github_url} />
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shadow-sm">
                               <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
                               🔥 Hiring/Active
