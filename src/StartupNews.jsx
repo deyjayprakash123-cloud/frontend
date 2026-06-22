@@ -1,27 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, Calendar, ExternalLink, ThumbsUp, AlertCircle, Cpu } from 'lucide-react';
+import { BookOpen, AlertCircle, Cpu } from 'lucide-react';
 
-// Relative time formatting helper
-function timeAgo(unixTimestamp) {
-  const seconds = Math.floor(Date.now() / 1000 - unixTimestamp);
-  if (seconds < 0) return "just now";
-  
-  const intervals = {
-    year: 31536000,
-    month: 2592000,
-    week: 604800,
-    day: 86400,
-    hour: 3600,
-    minute: 60,
-  };
-
-  for (const [unit, value] of Object.entries(intervals)) {
-    const count = Math.floor(seconds / value);
-    if (count >= 1) {
-      return `${count} ${unit}${count > 1 ? 's' : ''} ago`;
-    }
-  }
-  return "just now";
+// Timestamp formatting helper: converts unix time to [hh:mm:ss] format
+function formatTimestamp(unixTimestamp) {
+  const d = new Date(unixTimestamp * 1000);
+  const hrs = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  const secs = String(d.getSeconds()).padStart(2, '0');
+  return `[${hrs}:${mins}:${secs}]`;
 }
 
 export default function StartupNews() {
@@ -31,6 +17,39 @@ export default function StartupNews() {
   const [selectedTag, setSelectedTag] = useState("All");
   const [streamState, setStreamState] = useState("CONNECTING");
 
+  const fetchHNNews = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const topStoriesRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+      if (!topStoriesRes.ok) {
+        throw new Error('Failed to fetch Hacker News top stories.');
+      }
+      const ids = await topStoriesRes.json();
+      const top20Ids = ids.slice(0, 20);
+
+      const detailedArticles = await Promise.all(
+        top20Ids.map(async (id) => {
+          try {
+            const itemRes = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
+            if (itemRes.ok) {
+              return await itemRes.json();
+            }
+          } catch (e) {
+            console.error(`Error fetching item ${id}:`, e);
+          }
+          return null;
+        })
+      );
+      setArticles(detailedArticles.filter(item => item !== null));
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'An unexpected error occurred while fetching news.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -38,23 +57,19 @@ export default function StartupNews() {
 
     let eventSource;
     try {
-      // 1. Initialize EventSource to listen to Firebase Hacker News streaming updates
       eventSource = new EventSource('https://hacker-news.firebaseio.com/v0/topstories.json');
       
-      // 2. Add listener for 'put' events pushed by the server
       eventSource.addEventListener('put', async (event) => {
         setStreamState("LIVE");
-        setError(null); // Clear any previous errors on successful stream payload
+        setError(null);
         
         try {
           const payload = JSON.parse(event.data);
           const ids = payload.data;
           
           if (Array.isArray(ids)) {
-            // 3. Slice top 20 IDs
             const top20Ids = ids.slice(0, 20);
 
-            // 4. Fetch details in parallel
             const detailedArticles = await Promise.all(
               top20Ids.map(async (id) => {
                 try {
@@ -69,7 +84,6 @@ export default function StartupNews() {
               })
             );
 
-            // Update articles state
             setArticles(detailedArticles.filter(item => item !== null));
             setLoading(false);
           }
@@ -83,7 +97,7 @@ export default function StartupNews() {
       eventSource.onerror = (err) => {
         console.warn("EventSource encountered an connection error. Reconnecting...", err);
         setStreamState("RECONNECTING");
-        setError("Real-time stream connection lost. Attempting automatic reconnection...");
+        setError("Real-time stream connection lost. Reconnecting...");
       };
 
     } catch (err) {
@@ -93,7 +107,6 @@ export default function StartupNews() {
       setLoading(false);
     }
 
-    // 5. Cleanup memory on component unmount
     return () => {
       if (eventSource) {
         eventSource.close();
@@ -134,65 +147,56 @@ export default function StartupNews() {
   }, [articles, selectedTag]);
 
   return (
-    <div className="flex-1 flex flex-col relative w-full bg-zinc-950 text-zinc-100 selection:bg-indigo-500/20">
+    <div className="flex-1 flex flex-col relative w-full bg-black text-emerald-400 select-none">
       
-      {/* Background gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-purple-500/[0.03] blur-[150px] rounded-full pointer-events-none"></div>
-      <div className="absolute top-[600px] left-10 w-[400px] h-[400px] bg-indigo-500/[0.02] blur-[120px] rounded-full pointer-events-none"></div>
-
-      {/* Main Layout container */}
-      <main className="max-w-4xl mx-auto px-4 py-12 w-full space-y-10 relative z-10">
+      {/* Main Layout container - Dense Padding */}
+      <main className="max-w-4xl mx-auto px-2 py-6 w-full space-y-6 relative z-10 font-mono">
         
         {/* Page Header */}
-        <div className="border-b border-zinc-900 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="space-y-2">
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-100 flex items-center gap-2 select-none">
-              <BookOpen className="w-6 h-6 text-purple-400" />
-              News Feed
-              {/* Glowing LIVE stream indicator */}
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-555/20 shadow-sm ml-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                LIVE STREAM
+        <div className="border-b border-emerald-400 pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div className="space-y-1">
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-emerald-400 flex items-center gap-2 select-none">
+              &gt; NEWS_FEED.LOG
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[9px] font-bold bg-black text-emerald-400 border border-emerald-400 shadow-sm ml-2">
+                [ STREAM_LIVE ]
               </span>
             </h2>
-            <p className="text-sm text-zinc-400 max-w-lg leading-relaxed select-none">
+            <p className="text-xs text-emerald-650 max-w-lg leading-relaxed select-none">
               Zero-latency real-time news stream powered by Server-Sent Events (SSE). Prioritizing YC showcase threads and job feeds.
             </p>
           </div>
           
           {/* SSE Connection State Telemetry */}
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-zinc-900 bg-zinc-950 text-[10px] font-mono text-zinc-500 select-none shadow-inner">
-            <Cpu className="w-3.5 h-3.5 text-zinc-650" />
+          <div className="flex items-center gap-2 px-2.5 py-1 border border-emerald-400 bg-black text-[10px] select-none">
             <span>SSE_STATUS //</span>
             {streamState === "LIVE" ? (
-              <span className="text-emerald-450 font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-450 animate-ping"></span>
-                ACTIVE
+              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                [ ACTIVE ]
               </span>
             ) : streamState === "CONNECTING" ? (
-              <span className="text-amber-500 font-bold animate-pulse">CONNECTING</span>
+              <span className="text-amber-500 font-bold animate-pulse">[ CONNECTING ]</span>
             ) : streamState === "RECONNECTING" ? (
-              <span className="text-orange-500 font-bold animate-pulse">RECONNECTING</span>
+              <span className="text-orange-500 font-bold animate-pulse">[ RECONNECTING ]</span>
             ) : (
-              <span className="text-rose-500 font-bold">DISCONNECTED</span>
+              <span className="text-red-500 font-bold">[ DISCONNECTED ]</span>
             )}
           </div>
         </div>
 
         {/* Filter Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 select-none border-b border-zinc-900/60 pb-5">
-          <span className="text-xs font-mono text-zinc-500 mr-2">Feed Filter:</span>
+        <div className="flex flex-wrap items-center gap-1.5 select-none border-b border-emerald-400/40 pb-3 text-xs">
+          <span className="text-emerald-650 mr-2">LOG_FILTER:</span>
           {["All", "Startups & Showcases", "General Tech"].map((tag) => (
             <button
               key={tag}
               onClick={() => setSelectedTag(tag)}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer ${
+              className={`px-3 py-1 text-[10px] font-bold transition-all cursor-pointer ${
                 selectedTag === tag
-                  ? 'bg-purple-650 text-white shadow-md shadow-purple-600/20 border border-purple-500/20'
-                  : 'bg-zinc-900/60 text-zinc-400 border border-zinc-850 hover:text-zinc-200 hover:bg-zinc-900'
+                  ? 'bg-emerald-400 text-black border border-emerald-400'
+                  : 'bg-black text-emerald-400 border border-emerald-400/40 hover:bg-emerald-950/20 hover:border-emerald-400'
               }`}
             >
-              {tag}
+              [ {tag} ]
             </button>
           ))}
         </div>
@@ -200,84 +204,76 @@ export default function StartupNews() {
         {/* Dynamic Display States */}
         {loading ? (
           /* Loading Skeleton */
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-3">
             {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="p-6 rounded-2xl border border-zinc-855 bg-zinc-900/10 animate-pulse space-y-4">
+              <div key={n} className="p-3 border border-emerald-400/40 bg-black animate-pulse space-y-2">
                 <div className="flex justify-between items-center">
-                  <div className="h-5 w-24 bg-zinc-850 rounded"></div>
-                  <div className="h-4 w-16 bg-zinc-850 rounded"></div>
+                  <div className="h-3 w-24 bg-emerald-950 rounded"></div>
+                  <div className="h-3 w-16 bg-emerald-950 rounded"></div>
                 </div>
-                <div className="h-6 w-3/4 bg-zinc-800 rounded"></div>
-                <div className="h-4 w-1/2 bg-zinc-850 rounded"></div>
+                <div className="h-4 w-3/4 bg-emerald-900 rounded"></div>
               </div>
             ))}
           </div>
         ) : error && articles.length === 0 ? (
           /* Error Banner */
-          <div className="flex items-center gap-3 p-5 border border-red-500/20 bg-red-500/5 rounded-2xl text-red-400">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="flex items-center gap-3 p-4 border border-red-500 bg-black text-red-500 text-xs">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <div className="flex-1">
-              <h4 className="text-sm font-bold">Real-time pipeline issue</h4>
-              <p className="text-xs text-red-500/80 mt-0.5">{error}</p>
+              <h4 className="font-bold">[ ERROR: REAL-TIME STREAM PIPELINE FAULT ]</h4>
+              <p className="text-[10px] mt-0.5">{error}</p>
             </div>
           </div>
         ) : processedArticles.length > 0 ? (
-          /* Real-time article list */
-          <div className="grid grid-cols-1 gap-6">
-            {processedArticles.map((story, idx) => {
+          /* Real-time article log list - Tightly packed */
+          <div className="grid grid-cols-1 gap-2.5">
+            {processedArticles.map((story) => {
               const isStartupItem = hasStartupKeyword(story.title);
               const articleUrl = story.url || `https://news.ycombinator.com/item?id=${story.id}`;
 
               return (
                 <article
                   key={story.id}
-                  className={`group flex flex-col p-6 rounded-2xl border bg-zinc-900/10 hover:bg-zinc-900/25 transition-all duration-300 shadow-xl ${
+                  className={`flex flex-col p-3.5 border bg-black hover:bg-emerald-950/10 transition-colors ${
                     isStartupItem
-                      ? 'border-indigo-500/20 hover:border-indigo-500/40 shadow-indigo-950/10'
-                      : 'border-zinc-900 hover:border-zinc-800 shadow-zinc-950/15'
+                      ? 'border-emerald-400 shadow-[0_0_10px_rgba(0,255,65,0.05)]'
+                      : 'border-emerald-400/40'
                   }`}
                 >
-                  {/* Metadata Row */}
-                  <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 select-none">
-                    <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${
-                      isStartupItem
-                        ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/25'
-                        : 'text-zinc-400 bg-zinc-900/80 border-zinc-800'
-                    }`}>
-                      {isStartupItem ? "⚡ Startup Priority" : "Tech Story"}
+                  {/* Headline formatted as scroll log prefix: [hh:mm:ss] SYSTEM PUSH: Title */}
+                  <div className="text-xs md:text-sm font-bold text-emerald-400 leading-snug mb-2 flex items-start gap-1 flex-wrap">
+                    <span className="text-emerald-550 select-none font-mono">
+                      {formatTimestamp(story.time)} SYSTEM PUSH //
                     </span>
-                    <span className="text-[10px] font-mono text-zinc-550 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {timeAgo(story.time)}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-base md:text-lg font-bold text-zinc-100 group-hover:text-indigo-300 transition-colors leading-snug mb-3">
                     <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
                       {story.title}
                     </a>
-                  </h3>
+                  </div>
 
-                  {/* Action row */}
-                  <div className="flex justify-between items-center pt-4 border-t border-zinc-900/40 select-none text-[10px] font-mono">
-                    <div className="flex items-center gap-3.5 text-zinc-500">
-                      <span className="flex items-center gap-1 text-zinc-400">
-                        <ThumbsUp className="w-3 h-3 text-indigo-450" />
-                        {story.score || 0} Upvotes
+                  {/* Telemetry metadata footer inside brackets */}
+                  <div className="flex justify-between items-center pt-2.5 border-t border-emerald-400/20 select-none text-[9px] font-mono text-emerald-600">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span>
+                        [ PRIORITY: {isStartupItem ? "HIGH_STARTUP" : "STANDARD_TECH"} ]
                       </span>
-                      <span>•</span>
-                      <span>By: <span className="text-zinc-450">{story.by || 'Anonymous'}</span></span>
+                      <span>
+                        [ SCORE: {story.score || 0} UPVOTES ]
+                      </span>
+                      <span>
+                        [ SENDER: {story.by || 'Anonymous'} ]
+                      </span>
+                      <span>
+                        [ CAT: {isStartupItem ? "STARTUP_RADAR" : "GENERAL_NET"} ]
+                      </span>
                     </div>
 
                     <a
                       href={articleUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-zinc-450 hover:text-white transition-colors"
+                      className="text-emerald-400 hover:text-black hover:bg-emerald-400 p-0.5 transition-colors"
                     >
-                      <span>Read Article</span>
-                      <ExternalLink className="w-3 h-3" />
+                      [ READ_ARTICLE ]
                     </a>
                   </div>
                 </article>
@@ -286,13 +282,9 @@ export default function StartupNews() {
           </div>
         ) : (
           /* Empty state */
-          <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-850 rounded-2xl bg-zinc-900/5 min-h-[250px] space-y-3 select-none">
-            <AlertCircle className="w-8 h-8 text-zinc-500" />
-            <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-zinc-300">No stories in current stream subset</h4>
-              <p className="text-xs text-zinc-500 max-w-xs leading-relaxed font-light">
-                There are currently no matching items in the Hacker News real-time events queue.
-              </p>
+          <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-emerald-400 bg-black min-h-[200px] space-y-2 select-none">
+            <div className="text-emerald-600 font-mono text-xs">
+              [ ERROR: NO STREAM LOGS RECORDED FOR FILTER SET ]
             </div>
           </div>
         )}

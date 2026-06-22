@@ -1,165 +1,153 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Stars } from '@react-three/drei';
-import { ArrowRight, Cpu, Compass } from 'lucide-react';
-import * as THREE from 'three';
 
-// Highly performant floating zero-gravity geometric shards component
-function AntigravityParticles({ count = 90 }) {
-  const meshRef = useRef();
-
-  // Initialize random positions, drift speeds, and rotations for each shard
-  const particles = useMemo(() => {
-    const data = [];
-    for (let i = 0; i < count; i++) {
-      const x = (Math.random() - 0.5) * 32;
-      // Start randomly distributed on Yaxis
-      const y = (Math.random() - 0.5) * 22;
-      const z = (Math.random() - 0.5) * 16 - 6;
-
-      // Drift upward speed (slow and graceful)
-      const speedY = 0.006 + Math.random() * 0.015;
-
-      // Small random rotation speed per axis
-      const rotX = (Math.random() - 0.5) * 0.008;
-      const rotY = (Math.random() - 0.5) * 0.008;
-      const rotZ = (Math.random() - 0.5) * 0.008;
-
-      // Random scale for shard sizing diversity
-      const scale = 0.25 + Math.random() * 0.55;
-
-      data.push({ x, y, z, speedY, rotX, rotY, rotZ, scale });
-    }
-    return data;
-  }, [count]);
-
-  // Object3D to temporary hold matrix transformations during iteration
-  const tempObject = useMemo(() => new THREE.Object3D(), []);
+// Infinite scrolling 3D wireframe grid floor component
+function InfiniteGrid() {
+  const gridRef = useRef();
 
   useFrame((state) => {
-    if (!meshRef.current) return;
-    const elapsed = state.clock.getElapsedTime();
-
-    particles.forEach((p, idx) => {
-      // Float upward
-      p.y += p.speedY;
-
-      // If shard exits the top boundary, wrap it back to the bottom
-      if (p.y > 13) {
-        p.y = -13;
-        p.x = (Math.random() - 0.5) * 32;
-      }
-
-      // Add a small sinus wave horizontal wiggle for floating fluidity
-      const waveX = p.x + Math.sin(elapsed * 0.4 + idx) * 0.15;
-      const waveZ = p.z + Math.cos(elapsed * 0.3 + idx) * 0.1;
-
-      tempObject.position.set(waveX, p.y, waveZ);
-
-      // Rotate shards slowly
-      tempObject.rotation.x += p.rotX;
-      tempObject.rotation.y += p.rotY;
-      tempObject.rotation.z += p.rotZ;
-
-      // Apply individual shard scale
-      tempObject.scale.setScalar(p.scale);
-
-      // Update transformation matrices
-      tempObject.updateMatrix();
-      meshRef.current.setMatrixAt(idx, tempObject.matrix);
-    });
-
-    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (gridRef.current) {
+      // Cell spacing = 2 units (size 120 / divisions 60).
+      // Modulo 2 z-translation creates a seamless infinite scroll loop.
+      const scrollSpeed = 3.2;
+      gridRef.current.position.z = (state.clock.getElapsedTime() * scrollSpeed) % 2;
+    }
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[null, null, count]}>
-      {/* Octahedrons give an aesthetic sharp crystal/shard outline */}
-      <octahedronGeometry args={[0.5, 0]} />
-      <meshStandardMaterial
-        color="#312e81"
-        emissive="#1e1b4b"
-        emissiveIntensity={0.25}
-        roughness={0.08}
-        metalness={0.92}
+    <group ref={gridRef}>
+      <gridHelper 
+        args={[120, 60, '#00ff41', '#002b0c']} 
+        position={[0, -4.5, 0]} 
       />
-    </instancedMesh>
+    </group>
   );
 }
 
-// Main Landing Page Component
+const BOOT_LOGS = [
+  "[OK] INITIALIZING BOOT SEQUENCER COMPLETED.",
+  "[OK] DETECTED R3F WEBGL DEVICE HARDWARE...",
+  "[OK] LOADED COSMOS MATRIX COORDINATES (minDistance = 5.0)...",
+  "[OK] SYNCING ARCHIVES DEYJAYPRAKASH123-CLOUD/PROFILE...",
+  "[OK] CONNECTED TO STREAM // HACKER_NEWS_SSE_FIREBASE",
+  "[OK] UPLINK ONLINE // INTEL_LAYER_GEMINI_3.5",
+  "[SYSTEM] ALL RADAR SYSTEMS STANDING BY."
+];
+
+const ASCII_ART = `
+ _     _   _   _  _   _  ____ _   _    ___  _   _ _____ ____  _____   _    ____ _   _ 
+| |   / \\ | | | | | \\ | |/ ___| | | |  / _ \\| | | |_   _|  _ \\| ____| / \\  / ___| | | |
+| |  / _ \\| | | | |  \\| | |   | |_| | | | | | | | | | | | |_) |  _|  / _ \\| |   | |_| |
+| |_/ ___ \\ |_| | | |\\  | |___|  _  | | |_| | |_| | | | |  _ <| |___/ ___ \\ |___|  _  |
+|____/_/   \\_\\___/|_| \\_|\\____|_| |_|  \\___/\\___/  |_| |_| \\_\\_____/_/   \\_\\____|_| |_|
+`;
+
 export default function LandingPage() {
+  const [visibleLines, setVisibleLines] = useState([]);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [currentText, setCurrentText] = useState("");
+  const [typingComplete, setTypingComplete] = useState(false);
+
+  // Line-by-line typing sequence simulation
+  useEffect(() => {
+    if (currentLineIndex >= BOOT_LOGS.length) {
+      setTypingComplete(true);
+      return;
+    }
+
+    const targetLine = BOOT_LOGS[currentLineIndex];
+    let charIndex = 0;
+
+    const interval = setInterval(() => {
+      if (charIndex < targetLine.length) {
+        setCurrentText((prev) => prev + targetLine.charAt(charIndex));
+        charIndex++;
+      } else {
+        clearInterval(interval);
+        setVisibleLines((prev) => [...prev, targetLine]);
+        setCurrentText("");
+        setCurrentLineIndex((prev) => prev + 1);
+      }
+    }, 20); // speedy typing for console authenticity
+
+    return () => clearInterval(interval);
+  }, [currentLineIndex]);
+
   return (
     <div className="relative min-h-[92vh] flex flex-col justify-center items-center overflow-hidden bg-black w-full select-none">
       
-      {/* 3D Antigravity Canvas Background */}
-      <div className="absolute inset-0 w-full h-full z-0">
-        <Canvas camera={{ position: [0, 0, 15], fov: 60 }}>
-          <ambientLight intensity={0.25} />
+      {/* 3D Tilted Wireframe Grid Floor with Horizon Fog */}
+      <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
+        <Canvas camera={{ position: [0, 1.5, 9], fov: 60 }}>
+          <color attach="background" args={['#000000']} />
+          {/* Horizon black fog masks line edges */}
+          <fog attach="fog" args={['#000000', 4, 18]} />
           
-          {/* Colored light streams for metallic reflections */}
-          <pointLight position={[-15, 12, 8]} color="#4f46e5" intensity={3.5} />
-          <pointLight position={[15, -12, 8]} color="#a855f7" intensity={3.5} />
-          <pointLight position={[0, 15, -4]} color="#06b6d4" intensity={2.0} />
-          
-          {/* Ambient space dust */}
-          <Stars radius={90} depth={40} count={1200} factor={3} saturation={0.3} fade speed={0.8} />
-
-          <AntigravityParticles count={85} />
+          <ambientLight intensity={0.5} />
+          <InfiniteGrid />
         </Canvas>
       </div>
 
-      {/* Subtle background vignettes */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none z-5"></div>
+      {/* Screen Vignette Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/90 pointer-events-none z-5"></div>
       
-      {/* Glassmorphic Hero Overlay Content */}
-      <div className="max-w-2xl px-6 py-12 md:py-16 mx-4 rounded-3xl border border-zinc-800/40 bg-zinc-950/45 backdrop-blur-xl text-center space-y-8 shadow-[0_0_50px_rgba(99,102,241,0.08)] pointer-events-auto relative z-10 hover:border-zinc-700/40 transition-all duration-500">
+      {/* Brutalist Console Overlay Container */}
+      <div className="w-full max-w-3xl px-6 py-10 mx-4 border border-emerald-400 bg-black pointer-events-auto relative z-10 space-y-6 flex flex-col items-center">
         
-        {/* Core tech badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/5 text-xs font-semibold text-indigo-300 tracking-wide w-fit mx-auto shadow-inner">
-          <Cpu className="w-3.5 h-3.5 animate-pulse text-indigo-400" />
-          ANTIGRAVITY DATA PIPELINE READY
+        {/* Large Retro ASCII Banner */}
+        <pre className="text-[6px] sm:text-[8px] md:text-[9px] leading-tight text-emerald-400 font-bold overflow-x-auto whitespace-pre w-full text-center scrollbar-none select-none">
+          {ASCII_ART}
+        </pre>
+
+        {/* Boot sequence logs terminal */}
+        <div className="font-mono text-left space-y-1 w-full max-w-xl bg-black p-4 border border-emerald-400/40 h-48 overflow-y-auto">
+          {visibleLines.map((line, idx) => (
+            <div key={idx} className="text-emerald-400 text-xs leading-relaxed">
+              {line}
+            </div>
+          ))}
+          {!typingComplete && (
+            <div className="text-emerald-400 text-xs leading-relaxed flex items-center">
+              {currentText}
+              <span className="w-2 h-4 bg-emerald-400 inline-block animate-[blink_0.8s_infinite] ml-1"></span>
+            </div>
+          )}
         </div>
 
-        {/* Hero Title */}
-        <div className="space-y-4">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
-            Discover the{' '}
-            <span className="block mt-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-300 bg-clip-text text-transparent">
-              Next Generation
-            </span>
-            of Startups
-          </h1>
-          
-          <p className="text-sm md:text-base text-zinc-400 max-w-lg mx-auto leading-relaxed font-light">
-            An intelligence-driven index sourcing high-growth Y Combinator applicants, compiling codebase pulses, and synthesizing structural innovations using Gemini LLM layers.
-          </p>
-        </div>
-
-        {/* CTA Link Button */}
-        <div className="pt-2 flex justify-center">
-          <Link
-            to="/discover"
-            className="group relative inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-550 active:bg-indigo-750 text-white font-bold text-sm md:text-base py-3.5 px-9 rounded-full shadow-lg shadow-indigo-650/20 hover:shadow-indigo-600/30 hover:scale-[1.03] transition-all duration-300 cursor-pointer border border-indigo-500/35"
-          >
-            Explore Startup Radar
-            <ArrowRight className="w-4.5 h-4.5 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
-        </div>
+        {/* Console CTA Button Prompt */}
+        {typingComplete && (
+          <div className="pt-2 w-full max-w-xl text-left">
+            <Link
+              to="/discover"
+              className="group inline-flex items-center gap-1.5 bg-black text-emerald-400 border border-emerald-400 py-3.5 px-8 font-bold text-xs tracking-widest cursor-pointer select-none hover:bg-emerald-400 hover:text-black transition-none"
+            >
+              <span>&gt; ./initialize_radar.sh</span>
+              <span className="animate-[blink_1.1s_infinite] font-black text-sm">_</span>
+            </Link>
+          </div>
+        )}
 
       </div>
 
-      {/* Decorative side HUD text details */}
-      <div className="absolute bottom-6 left-6 pointer-events-none hidden md:block font-mono text-[9px] text-zinc-600 tracking-widest space-y-1 z-10">
-        <div>CORE // SPACE_COGNITIVE_INTELLIGENCE</div>
-        <div>SYS_STATUS // ACTIVE_ZERO_GRAVITY_DRIFT</div>
+      {/* Retro telemetry indicators */}
+      <div className="absolute bottom-6 left-6 pointer-events-none hidden md:block font-mono text-[9px] text-emerald-650 tracking-widest space-y-1 z-10">
+        <div>CONSOLE // VT100_PHOSPHOR_GREEN</div>
+        <div>SCAN_FREQ // 60HZ_CRT_OVERLAY</div>
       </div>
 
-      <div className="absolute bottom-6 right-6 pointer-events-none hidden md:block font-mono text-[9px] text-zinc-600 tracking-widest space-y-1 z-10 text-right">
-        <div>BUILD // PLATFORM_VER_1.5.0</div>
-        <div>FRAMEWORK // REACT_ROUTER_R3F</div>
+      <div className="absolute bottom-6 right-6 pointer-events-none hidden md:block font-mono text-[9px] text-emerald-650 tracking-widest space-y-1 z-10 text-right">
+        <div>TERMINAL // INTEL_BOOT_COMPLETE</div>
+        <div>UPLINK_BANDWIDTH // REAL_TIME_SSE</div>
       </div>
+
+      {/* Blinking cursor custom styling helper */}
+      <style>{`
+        @keyframes blink {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }
+      `}</style>
 
     </div>
   );

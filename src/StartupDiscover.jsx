@@ -1,15 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Terminal, 
-  Copy, 
-  Check, 
-  BookOpen, 
-  Cpu, 
-  Compass, 
-  Code, 
-  ExternalLink,
-  Layers,
-  MapPin
+  Layers 
 } from 'lucide-react';
 import StartupGalaxy from './StartupGalaxy';
 
@@ -31,23 +23,20 @@ function parseGithubUrl(url) {
   return null;
 }
 
-// Mini-component to display live repository stats on startup cards
+// Mini-component to display live repository stats on startup cards in bracket format
 function GithubPulse({ pulse }) {
   if (!pulse) return null;
 
   return (
-    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap justify-end">
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-350 shadow-sm" title="Stars">
-        <span>⭐</span>
-        <span>{(pulse.stargazers_count || 0).toLocaleString()}</span>
+    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap justify-end font-mono text-[10px] select-none">
+      <span className="text-emerald-400" title="Stars">
+        [ ⭐ {(pulse.stargazers_count || 0).toLocaleString()} ]
       </span>
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Forks">
-        <span>🍴</span>
-        <span>{(pulse.forks_count || 0).toLocaleString()}</span>
+      <span className="text-emerald-400" title="Forks">
+        [ 🍴 {(pulse.forks_count || 0).toLocaleString()} ]
       </span>
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Open Issues">
-        <span>🚨</span>
-        <span>{(pulse.open_issues_count || 0).toLocaleString()}</span>
+      <span className="text-emerald-400" title="Open Issues">
+        [ 🚨 {(pulse.open_issues_count || 0).toLocaleString()} ]
       </span>
     </div>
   );
@@ -206,85 +195,72 @@ export default function StartupDiscover() {
   };
 
   return (
-    <div className="flex-1 flex flex-col relative w-full bg-zinc-950 text-zinc-100 selection:bg-indigo-500/20">
+    <div className="flex-1 flex flex-col relative w-full bg-black text-emerald-400 select-none">
       
-      {/* Background design elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-indigo-500/[0.03] blur-[150px] rounded-full pointer-events-none"></div>
-      <div className="absolute top-[800px] right-10 w-[400px] h-[400px] bg-purple-500/[0.02] blur-[120px] rounded-full pointer-events-none"></div>
-
       {/* 1. DOCUMENTATION & SYSTEM UTILITIES */}
-      <section className="max-w-6xl mx-auto px-4 pt-10 pb-6 w-full space-y-6 select-none">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-900 pb-6">
+      <section className="max-w-6xl mx-auto px-2 pt-4 pb-2 w-full space-y-3 select-none">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b border-emerald-400 pb-3">
           <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-100 flex items-center gap-2">
-              Startup Radar
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-emerald-400 flex items-center gap-2">
+              &gt; STARTUP_RADAR.SYS
             </h2>
-            <p className="text-sm text-zinc-400">
+            <p className="text-xs text-emerald-650">
               Query active YC companies and generate AI-powered technical breakdowns of their engineering innovations.
             </p>
           </div>
-          <div className="text-xs font-mono px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 border border-zinc-800 shadow-inner">
+          <div className="text-xs font-mono px-2.5 py-1 bg-black text-emerald-400 border border-emerald-400 shadow-inner">
             DISCOVERY_API // {BACKEND_URL}/api/discover-startups
           </div>
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          <div className="glow-border relative flex flex-col justify-between p-5 rounded-2xl border border-zinc-800/80 bg-zinc-900/10 hover:bg-zinc-900/20 hover:scale-[1.01] transition-all duration-300">
-            <div className="space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-indigo-400 shadow-md">
-                <Layers className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-zinc-200">YC Directory Sourcing</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed font-light">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+          <div className="relative flex flex-col justify-between p-3.5 border border-emerald-400 bg-black">
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-emerald-400">[ 01_YC_DIRECTORY_SOURCING ]</h3>
+              <p className="text-[11px] text-emerald-650 leading-normal font-light">
                 Polls the open-source Y Combinator database index to filter active, growth-stage candidate listings instantly.
               </p>
             </div>
-            <div className="pt-4 text-[10px] font-mono text-zinc-650">ENDPOINT // PUBLIC_INDEX</div>
+            <div className="pt-2 text-[9px] font-mono text-emerald-700">ENDPOINT // PUBLIC_INDEX</div>
           </div>
 
-          <div className="glow-border relative flex flex-col justify-between p-5 rounded-2xl border border-zinc-800/80 bg-zinc-900/10 hover:bg-zinc-900/20 hover:scale-[1.01] transition-all duration-300">
-            <div className="space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-purple-400 shadow-md">
-                <Cpu className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-zinc-200">Gemini LLM Synthesis</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed font-light">
+          <div className="relative flex flex-col justify-between p-3.5 border border-emerald-400 bg-black">
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-emerald-400">[ 02_GEMINI_LLM_SYNTHESIS ]</h3>
+              <p className="text-[11px] text-emerald-650 leading-normal font-light">
                 Leverages Google's lightweight multimodal architecture to extract core codebase solutions and talent alignment profiles.
               </p>
             </div>
-            <div className="pt-4 text-[10px] font-mono text-zinc-650">MODEL // GEMINI_3.1_FLASH</div>
+            <div className="pt-2 text-[9px] font-mono text-emerald-700">MODEL // GEMINI_3.1_FLASH</div>
           </div>
 
-          <div className="glow-border relative flex flex-col justify-between p-5 rounded-2xl border border-zinc-800/80 bg-zinc-900/10 hover:bg-zinc-900/20 hover:scale-[1.01] transition-all duration-300">
-            <div className="space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-emerald-400 shadow-md">
-                <Compass className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-bold text-zinc-200">Interactive 3D Galaxy</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed font-light">
+          <div className="relative flex flex-col justify-between p-3.5 border border-emerald-400 bg-black">
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-emerald-400">[ 03_INTERACTIVE_3D_GALAXY ]</h3>
+              <p className="text-[11px] text-emerald-650 leading-normal font-light">
                 Visualizes company clusters as orbital stars in a WebGL workspace. Sizes and pulsing halos map to star and issue loads.
               </p>
             </div>
-            <div className="pt-4 text-[10px] font-mono text-zinc-650">RENDER // THREE_JS_R3F</div>
+            <div className="pt-2 text-[9px] font-mono text-emerald-700">RENDER // THREE_JS_R3F</div>
           </div>
         </div>
       </section>
 
       {/* 2. OPERATIONAL WORKSPACE */}
-      <section className="max-w-6xl mx-auto px-4 py-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <section className="max-w-6xl mx-auto px-2 py-4 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           
           {/* Left Column: Controls & Console Logs */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-4">
             
             {/* Control Panel */}
-            <div className="flex flex-col p-6 rounded-2xl border border-zinc-800 bg-zinc-900/20 backdrop-blur-md space-y-6 shadow-xl select-none">
+            <div className="flex flex-col p-4 border border-emerald-400 bg-black space-y-4">
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-zinc-200">
-                  Pipeline Controls
+                <h3 className="text-sm font-bold text-emerald-400">
+                  [ PIPELINE_CONTROLS ]
                 </h3>
-                <p className="text-xs text-zinc-450">
+                <p className="text-[10px] text-emerald-600">
                   Trigger YC index scraping and Gemini synthesis.
                 </p>
               </div>
@@ -293,46 +269,45 @@ export default function StartupDiscover() {
               <button
                 onClick={handleDiscoverStartups}
                 disabled={isDiscovering}
-                className={`w-full group inline-flex items-center justify-center gap-2.5 font-bold py-3.5 px-5 rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer ${
+                className={`w-full font-bold py-2.5 px-4 transition-all duration-100 cursor-pointer ${
                   isDiscovering 
-                    ? 'bg-indigo-800/40 text-indigo-300 border border-indigo-500/30 animate-pulse cursor-wait'
-                    : 'bg-indigo-650 hover:bg-indigo-600 active:bg-indigo-750 text-white shadow-lg shadow-indigo-600/10 hover:scale-[1.01]'
+                    ? 'bg-black text-emerald-600 border border-emerald-700 animate-pulse cursor-wait'
+                    : 'bg-black text-emerald-400 border border-emerald-400 hover:bg-emerald-400 hover:text-black'
                 }`}
               >
-                <Compass className={`w-4 h-4 ${isDiscovering ? 'animate-spin' : 'group-hover:rotate-45 transition-transform'}`} />
-                <span>{isDiscovering ? 'Hunting Startups...' : '🔍 Hunt YC Startups'}</span>
+                {isDiscovering ? '[ RUNNING_PIPELINE... ]' : '[ RUN_YC_DISCOVERY ]'}
               </button>
             </div>
 
             {/* Terminal Logs Panel */}
-            <div className="flex flex-col p-6 rounded-2xl border border-zinc-800 bg-zinc-900/20 backdrop-blur-md space-y-3 shadow-xl">
+            <div className="flex flex-col p-4 border border-emerald-400 bg-black space-y-2">
               <div className="flex justify-between items-center px-1 select-none">
-                <span className="text-xs font-mono text-zinc-500 flex items-center gap-1.5">
+                <span className="text-xs font-mono text-emerald-650 flex items-center gap-1.5">
                   <Terminal className="w-3.5 h-3.5" />
                   discovery_stream.log
                 </span>
                 <button 
                   onClick={handleClearLogs}
-                  className="text-xs font-mono text-zinc-650 hover:text-zinc-400 transition-colors cursor-pointer"
+                  className="text-xs font-mono text-emerald-500 hover:text-emerald-300 transition-colors cursor-pointer"
                 >
-                  Clear Logs
+                  [ CLEAR ]
                 </button>
               </div>
 
               <div 
                 id="pipelineLog"
-                className="h-64 overflow-y-auto border border-zinc-800/80 bg-black/70 rounded-xl p-4 font-mono text-xs space-y-2 shadow-inner"
+                className="h-64 overflow-y-auto border border-emerald-400 bg-black p-3 font-mono text-xs space-y-1.5"
               >
                 {logs.map((log, idx) => (
                   <div 
                     key={idx} 
                     className={`leading-relaxed ${
-                      log.type === 'error' ? 'text-rose-400' :
-                      log.type === 'success' ? 'text-emerald-400' :
-                      log.type === 'warning' ? 'text-amber-400' : 'text-zinc-300'
+                      log.type === 'error' ? 'text-red-500 font-bold' :
+                      log.type === 'success' ? 'text-emerald-400 font-bold' :
+                      log.type === 'warning' ? 'text-amber-500' : 'text-emerald-500'
                     }`}
                   >
-                    {log.time && <span className="text-zinc-700 mr-2">[{log.time}]</span>}
+                    {log.time && <span className="text-emerald-700 mr-2">[{log.time}]</span>}
                     {log.text}
                   </div>
                 ))}
@@ -343,59 +318,59 @@ export default function StartupDiscover() {
           </div>
 
           {/* Right Column: Discovery Board */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-4">
             
             {/* Header for board */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1 pb-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1 pb-1">
               <div className="flex items-center gap-2 select-none">
-                <Layers className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-lg font-bold text-zinc-200">
-                  Discovery Board
+                <Layers className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-md font-bold text-emerald-400">
+                  [ DISCOVERY_BOARD ]
                 </h3>
               </div>
               
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {/* View Mode Toggle */}
-                <div className="flex items-center bg-zinc-900/60 border border-zinc-800 p-0.5 rounded-xl mr-2 shadow-inner select-none">
+                <div className="flex items-center bg-black border border-emerald-400 p-0.5 select-none gap-1">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 cursor-pointer ${
+                    className={`px-2.5 py-1 text-[10px] font-bold cursor-pointer ${
                       viewMode === 'grid'
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
-                        : 'text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-emerald-400 text-black'
+                        : 'text-emerald-400 hover:bg-emerald-950'
                     }`}
                   >
-                    Grid
+                    GRID
                   </button>
                   <button
                     onClick={() => setViewMode('galaxy')}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 cursor-pointer ${
+                    className={`px-2.5 py-1 text-[10px] font-bold cursor-pointer ${
                       viewMode === 'galaxy'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25'
-                        : 'text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-emerald-400 text-black'
+                        : 'text-emerald-400 hover:bg-emerald-950'
                     }`}
                   >
-                    Galaxy
+                    GALAXY
                   </button>
                 </div>
 
-                <span className="text-xs font-mono text-zinc-500 select-none">Region:</span>
+                <span className="text-xs font-mono text-emerald-600 select-none">REG:</span>
                 <select
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2 px-3 focus:outline-none transition-all cursor-pointer hover:bg-zinc-850 hover:border-zinc-700"
+                  className="bg-black border border-emerald-400 text-emerald-400 text-xs font-bold focus:bg-emerald-950 cursor-pointer block p-1.5 focus:outline-none"
                 >
-                  <option value="All">All Regions</option>
-                  <option value="United States">United States</option>
-                  <option value="India">India</option>
-                  <option value="United Kingdom">United Kingdom</option>
-                  <option value="Canada">Canada</option>
-                  <option value="Singapore">Singapore</option>
-                  <option value="Germany">Germany</option>
+                  <option value="All">ALL_REGIONS</option>
+                  <option value="United States">UNITED_STATES</option>
+                  <option value="India">INDIA</option>
+                  <option value="United Kingdom">UNITED_KINGDOM</option>
+                  <option value="Canada">CANADA</option>
+                  <option value="Singapore">SINGAPORE</option>
+                  <option value="Germany">GERMANY</option>
                 </select>
                 {startups.length > 0 && (
-                  <span className="text-xs font-mono text-indigo-400 bg-indigo-550/10 px-2.5 py-1.5 rounded border border-indigo-550/20 animate-pulse whitespace-nowrap select-none">
-                    {startups.length} Candidates
+                  <span className="text-xs font-mono text-emerald-450 bg-emerald-950/20 px-2 py-1 border border-emerald-400 select-none">
+                    [ {startups.length} CANDIDATES ]
                   </span>
                 )}
               </div>
@@ -404,18 +379,18 @@ export default function StartupDiscover() {
             {/* Display states */}
             {isDiscovering && startups.length === 0 ? (
               /* Loading Pulse Grid */
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[1, 2, 3].map((n) => (
-                  <div key={n} className="p-6 rounded-2xl border border-zinc-800/50 bg-zinc-900/10 animate-pulse space-y-4">
+                  <div key={n} className="p-4 border border-emerald-400/40 bg-black animate-pulse space-y-3">
                     <div className="flex justify-between">
-                      <div className="h-6 w-32 bg-zinc-800 rounded animate-pulse"></div>
-                      <div className="h-5 w-20 bg-zinc-800 rounded animate-pulse"></div>
+                      <div className="h-4 w-32 bg-emerald-950 rounded"></div>
+                      <div className="h-4 w-20 bg-emerald-950 rounded"></div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="h-4 w-full bg-zinc-800 rounded animate-pulse"></div>
-                      <div className="h-4 w-5/6 bg-zinc-800 rounded animate-pulse"></div>
+                    <div className="space-y-1">
+                      <div className="h-3 w-full bg-emerald-950 rounded"></div>
+                      <div className="h-3 w-5/6 bg-emerald-950 rounded"></div>
                     </div>
-                    <div className="h-4 w-28 bg-zinc-800 rounded animate-pulse"></div>
+                    <div className="h-3 w-28 bg-emerald-950 rounded"></div>
                   </div>
                 ))}
               </div>
@@ -423,90 +398,74 @@ export default function StartupDiscover() {
               viewMode === 'galaxy' ? (
                 <StartupGalaxy startups={startups} />
               ) : (
-                /* Startup Cards list */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                /* Startup Cards list as Data Blocks */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {startups.map((startup, index) => {
-                    const hasLogo = startup.logo && !logoErrors[index];
                     return (
                       <div 
                         key={index} 
-                        className="group relative flex flex-col justify-between p-6 rounded-2xl border border-zinc-800/80 bg-zinc-900/20 hover:bg-zinc-900/30 hover:border-zinc-700/80 transition-all duration-300 hover:scale-[1.01] shadow-xl backdrop-blur-md"
+                        className="flex flex-col justify-between p-4 border border-emerald-400 bg-black hover:bg-emerald-950/10 transition-colors"
                       >
                         <div>
                           {/* Header info */}
-                          <div className="flex justify-between items-start gap-4 mb-4">
+                          <div className="flex justify-between items-start gap-2.5 mb-3">
                             <div className="flex items-center gap-3">
-                              {hasLogo ? (
-                                <img 
-                                  src={startup.logo} 
-                                  alt={`${startup.name} logo`} 
-                                  onError={() => setLogoErrors(prev => ({ ...prev, [index]: true }))}
-                                  className="w-12 h-12 rounded-xl object-contain bg-zinc-950 border border-zinc-800 p-1.5 flex-shrink-0"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
-                                  {startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}
-                                </div>
-                              )}
+                              {/* Pure text bracketed ASCII initial instead of image/logo */}
+                              <div className="w-10 h-10 border border-emerald-400 bg-black flex items-center justify-center text-emerald-400 font-bold text-base flex-shrink-0 select-none">
+                                [{startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}]
+                              </div>
                               <div>
-                                <h4 className="text-base font-bold text-zinc-100 group-hover:text-indigo-300 transition-colors">
+                                <h4 className="text-sm font-bold text-emerald-400 leading-tight">
                                   {startup.name}
                                 </h4>
-                                <span className="text-[10px] text-zinc-550 flex items-center gap-1 mt-0.5">
-                                  <MapPin className="w-3 h-3 text-indigo-500/75" />
-                                  {startup.contact_location}
+                                <span className="text-[10px] text-emerald-650 flex items-center gap-1 mt-0.5 font-mono select-none">
+                                  [ LOC: {startup.contact_location} ]
                                 </span>
                               </div>
                             </div>
                             
-                            {/* Badges block */}
-                            <div className="flex flex-col items-end gap-1.5 select-none">
-                              <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 whitespace-nowrap">
-                                {startup.batch}
+                            {/* Badges block inside brackets */}
+                            <div className="flex flex-col items-end gap-1 font-mono text-[9px] select-none text-emerald-400">
+                              <span>
+                                [ BATCH: {startup.batch} ]
                               </span>
                               <GithubPulse pulse={startup.github_pulse} />
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shadow-sm">
-                                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
-                                🔥 Hiring/Active
+                              <span className="text-emerald-500 font-bold">
+                                [ STATUS: HIRING / ACTIVE ]
                               </span>
                             </div>
                           </div>
       
-                          {/* AI Summary */}
-                          <div className="relative rounded-xl border border-zinc-800/50 bg-black/35 p-4 font-sans text-sm text-zinc-300 leading-relaxed mb-4">
-                            <div className="absolute top-4 left-4 text-indigo-500/20">
-                              <Code className="w-4 h-4" />
+                          {/* AI Summary in bracket format */}
+                          <div className="border border-emerald-400/40 bg-black p-3 font-mono text-xs text-emerald-500 leading-relaxed mb-3">
+                            <div className="text-[9px] font-bold text-emerald-700 mb-1 select-none">
+                              [ AI_SYNTHESIS_REPORT ]
                             </div>
-                            <p className="pl-6 font-light">{startup.AI_summary}</p>
+                            <p className="font-light">{startup.AI_summary}</p>
                           </div>
                         </div>
     
                         {/* Card Actions */}
-                        <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-zinc-900/30 mt-auto">
+                        <div className="flex flex-wrap justify-between items-center gap-2 pt-3 border-t border-emerald-400/30 mt-auto text-[10px] font-mono select-none">
                           {startup.website ? (
                             <a 
                               href={startup.website} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-zinc-450 hover:text-indigo-400 transition-colors font-medium hover:underline"
+                              className="text-emerald-400 hover:text-black hover:bg-emerald-400 p-0.5 transition-colors"
                             >
-                              <span>🌐 Visit Main Website</span>
+                              [ VISIT_WEBSITE ]
                             </a>
                           ) : (
-                            <span className="text-xs text-zinc-600 select-none">No website</span>
+                            <span className="text-emerald-700">[ NO_WEBSITE ]</span>
                           )}
     
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleCopySummary(startup.AI_summary, index)}
-                              className="inline-flex items-center gap-1.5 text-xs text-zinc-450 hover:text-zinc-200 transition-colors py-2 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 cursor-pointer"
-                              title="Copy Summary"
+                              className="text-[10px] p-0.5 border border-emerald-400 bg-black text-emerald-400 hover:bg-emerald-400 hover:text-black cursor-pointer"
                             >
-                              {copiedIndex === index ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
+                              {copiedIndex === index ? '[ COPIED ]' : '[ COPY ]'}
                             </button>
     
                             {startup.jobs_url ? (
@@ -514,13 +473,12 @@ export default function StartupDiscover() {
                                 href={startup.jobs_url} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-white bg-indigo-650 hover:bg-indigo-600 active:bg-indigo-750 transition-all duration-200 py-2 px-4 rounded-xl shadow-lg shadow-indigo-600/10 hover:scale-[1.02] border border-indigo-500/30"
+                                className="border border-emerald-400 bg-black text-emerald-400 hover:bg-emerald-400 hover:text-black p-0.5 transition-colors"
                               >
-                                <span>💼 Apply to Startup</span>
-                                <ExternalLink className="w-3.5 h-3.5" />
+                                [ APPLY_NOW ]
                               </a>
                             ) : (
-                              <span className="text-xs text-zinc-550 select-none">Applications Closed</span>
+                              <span className="text-emerald-700">[ APPS_CLOSED ]</span>
                             )}
                           </div>
                         </div>
@@ -531,28 +489,16 @@ export default function StartupDiscover() {
               )
             ) : hasSearched ? (
               /* No results empty state */
-              <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-850 rounded-2xl bg-zinc-900/5 min-h-[300px] space-y-4 w-full">
-                <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-850 flex items-center justify-center text-zinc-500 shadow-inner">
-                  <Compass className="w-6 h-6 text-indigo-400" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-semibold text-zinc-300">No regional candidates found</h4>
-                  <p className="text-xs text-zinc-500 max-w-xs leading-relaxed font-light">
-                    No active startups found in this region for the current batch. Try another country!
-                  </p>
+              <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-emerald-400 bg-black min-h-[250px] space-y-3 w-full font-mono text-xs">
+                <div className="text-emerald-600 select-none">
+                  [ ERROR: NO CANDIDATES FOUND IN THIS REGION ]
                 </div>
               </div>
             ) : (
               /* Initial state empty placeholder */
-              <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-850 rounded-2xl bg-zinc-900/5 min-h-[300px] space-y-4 w-full">
-                <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-850 flex items-center justify-center text-zinc-500 shadow-inner">
-                  <Compass className="w-6 h-6 animate-pulse" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-semibold text-zinc-300">Board is currently empty</h4>
-                  <p className="text-xs text-zinc-500 max-w-xs leading-relaxed font-light">
-                    Trigger the Y Combinator Startup Discovery Pipeline on the left to source and analyze candidates.
-                  </p>
+              <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-emerald-400 bg-black min-h-[250px] space-y-3 w-full font-mono text-xs">
+                <div className="text-emerald-650 animate-pulse select-none">
+                  [ PIPELINE IDLE // AWAITING TRIGGERS ]
                 </div>
               </div>
             )}

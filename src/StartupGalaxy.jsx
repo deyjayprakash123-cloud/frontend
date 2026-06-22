@@ -87,25 +87,14 @@ function StartupNode({ startup, position, index }) {
     return 0.5 + Math.min(Math.log10(stars), 5) * 0.35;
   }, [stars]);
 
-  // 2. Select node base color from a curated glowing neon palette
-  const nodeColor = useMemo(() => {
-    const COLORS = [
-      '#6366f1', // Indigo
-      '#8b5cf6', // Violet
-      '#ec4899', // Pink
-      '#3b82f6', // Blue
-      '#06b6d4', // Cyan
-      '#10b981', // Emerald
-      '#f59e0b', // Amber
-    ];
-    return COLORS[index % COLORS.length];
-  }, [index]);
+  // 2. Select node base color: green phosphor to simulate classic retro CRT terminals
+  const nodeColor = '#00ff41';
 
-  // 3. Map open_issues_count to pulse speed and color (Red = high open issues, Green/Cyan = low open issues)
+  // 3. Map open_issues_count to pulse speed and color (Red = high open issues, Amber = med, Green = low)
   const pulseColor = useMemo(() => {
     if (issues > 50) return '#ff3b30'; // Red
-    if (issues > 15) return '#ffcc00'; // Amber
-    return '#00ffc4'; // Green-cyan
+    if (issues > 15) return '#ffb000'; // Amber
+    return '#00ff41'; // Green
   }, [issues]);
 
   const pulseSpeed = useMemo(() => {
@@ -134,8 +123,6 @@ function StartupNode({ startup, position, index }) {
     }
   });
 
-  const showLogo = startup.logo_url && !logoError;
-
   return (
     <group position={position}>
       {/* 3D Sphere Planet Node */}
@@ -152,13 +139,14 @@ function StartupNode({ startup, position, index }) {
           document.body.style.cursor = 'default';
         }}
       >
-        <sphereGeometry args={[radius, 32, 32]} />
+        <icosahedronGeometry args={[radius, 1]} />
         <meshStandardMaterial
           color={nodeColor}
           emissive={nodeColor}
-          emissiveIntensity={hovered ? 1.2 : 0.45}
-          roughness={0.15}
-          metalness={0.85}
+          emissiveIntensity={hovered ? 2.5 : 0.9}
+          wireframe={true}
+          transparent={true}
+          opacity={0.9}
         />
       </mesh>
 
@@ -176,38 +164,29 @@ function StartupNode({ startup, position, index }) {
         </mesh>
       </Billboard>
 
-      {/* Sleek Cyberpunk On-Hover 2D Html Billboard */}
+      {/* Retro-Futuristic Terminal On-Hover HTML Tooltip */}
       {hovered && (
         <Html
           distanceFactor={16} // dynamic scaling based on camera distance
           position={[0, radius + 1.2, 0]}
           center
-          className="pointer-events-none select-none z-50"
+          className="pointer-events-none select-none z-50 font-mono"
         >
-          <div className="flex items-center gap-3 bg-zinc-950/90 border border-indigo-500/50 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-[0_0_25px_rgba(99,102,241,0.35)] min-w-[210px] text-zinc-100 transition-all duration-300 transform scale-100">
-            {showLogo ? (
-              <img
-                src={startup.logo_url}
-                alt={`${startup.name} logo`}
-                onError={() => setLogoError(true)}
-                className="w-10 h-10 rounded-lg object-contain bg-black border border-zinc-800 p-1 flex-shrink-0"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-500/30 flex items-center justify-center text-white font-black text-lg flex-shrink-0 shadow-md">
-                {startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}
-              </div>
-            )}
+          <div className="flex items-center gap-3 bg-black border border-emerald-400 px-4 py-3 min-w-[210px] text-emerald-400 shadow-[0_0_15px_rgba(0,255,65,0.2)]">
+            <div className="w-10 h-10 border border-emerald-400 bg-black flex items-center justify-center text-emerald-400 font-bold text-base flex-shrink-0 select-none">
+              [{startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}]
+            </div>
             <div className="flex-1 min-w-0">
-              <h5 className="text-sm font-extrabold tracking-tight text-white truncate leading-tight">
+              <h5 className="text-xs font-bold truncate leading-tight">
                 {startup.name}
               </h5>
-              <p className="text-[10px] font-mono text-indigo-400 mt-0.5">
-                {startup.batch}
+              <p className="text-[9px] text-emerald-600 mt-0.5">
+                [ BATCH: {startup.batch} ]
               </p>
-              <div className="flex items-center gap-2 mt-1.5 text-[9px] font-mono text-zinc-400 bg-zinc-900/60 py-0.5 px-1.5 rounded border border-zinc-800/80 w-fit">
-                <span className="flex items-center gap-0.5">⭐ {stars.toLocaleString()}</span>
+              <div className="flex items-center gap-2 mt-1.5 text-[9px] text-emerald-400 bg-black py-0.5 px-1.5 border border-emerald-400/40 w-fit">
+                <span>⭐ {stars.toLocaleString()}</span>
                 <span>•</span>
-                <span className={`flex items-center gap-0.5 ${issues > 25 ? 'text-red-400 font-bold' : ''}`}>
+                <span className={issues > 25 ? 'text-red-500 font-bold' : ''}>
                   🚨 {issues.toLocaleString()}
                 </span>
               </div>
@@ -273,18 +252,18 @@ export default function StartupGalaxy({ startups }) {
   }, [startups]);
 
   return (
-    <div className="w-full h-[600px] rounded-3xl overflow-hidden border border-zinc-800 bg-black relative shadow-2xl shadow-indigo-950/20">
+    <div className="w-full h-[600px] overflow-hidden border border-emerald-400 bg-black relative font-mono">
       
       {/* HUD overlay labels */}
-      <div className="absolute top-4 left-4 z-10 pointer-events-none font-mono text-[10px] text-zinc-500 space-y-1">
+      <div className="absolute top-4 left-4 z-10 pointer-events-none text-[10px] text-emerald-600 space-y-1">
         <div>SYSTEM // CINEMATIC_3D_GALAXY_GRAPH</div>
         <div>COORDINATES // GOLDEN_SPIRAL_DISPERSION</div>
         <div>TOTAL_NODES // {startups.length}</div>
       </div>
-      <div className="absolute bottom-4 right-4 z-10 pointer-events-none font-mono text-[9px] text-zinc-600 bg-zinc-950/80 border border-zinc-900 px-3 py-1.5 rounded-lg flex gap-3">
-        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Low Issues</span>
-        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Med Issues</span>
-        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> High Issues</span>
+      <div className="absolute bottom-4 right-4 z-10 pointer-events-none text-[9px] text-emerald-400 bg-black border border-emerald-400 px-3 py-1.5 flex gap-3">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-emerald-400"></span> [ ISSUES: LOW ]</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-amber-500"></span> [ ISSUES: MED ]</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-red-500 animate-pulse"></span> [ ISSUES: HIGH ]</span>
       </div>
 
       <Canvas
@@ -302,7 +281,7 @@ export default function StartupGalaxy({ startups }) {
         <Stars radius={100} depth={50} count={3000} factor={4} saturation={0.5} fade speed={1} />
 
         {/* Cinematic grid helper simulating orbital planes */}
-        <gridHelper args={[60, 30, '#1e1b4b', '#0f172a']} position={[0, -6, 0]} />
+        <gridHelper args={[60, 30, '#00ff41', '#002206']} position={[0, -6, 0]} />
 
         {/* Node instances */}
         {startups.map((startup, idx) => (
