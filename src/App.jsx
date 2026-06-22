@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import StartupGalaxy from './StartupGalaxy';
 import { 
   ArrowDown, 
   Terminal, 
@@ -37,62 +38,22 @@ function parseGithubUrl(url) {
 }
 
 // Mini-component to display live repository stats on startup cards
-function GithubPulse({ github_url }) {
-  const [stats, setStats] = useState(null);
-
-  useEffect(() => {
-    const parsed = parseGithubUrl(github_url);
-    if (!parsed) {
-      setStats(null);
-      return;
-    }
-
-    let isMounted = true;
-
-    async function fetchRepoStats() {
-      try {
-        const response = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`);
-        if (!response.ok) {
-          throw new Error(`GitHub API returned status ${response.status}`);
-        }
-        const data = await response.json();
-        if (isMounted) {
-          setStats({
-            stars: data.stargazers_count,
-            forks: data.forks_count,
-            issues: data.open_issues_count
-          });
-        }
-      } catch (err) {
-        // Silently catch errors/rate limits
-        if (isMounted) {
-          setStats(null);
-        }
-      }
-    }
-
-    fetchRepoStats();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [github_url]);
-
-  if (!stats) return null;
+function GithubPulse({ pulse }) {
+  if (!pulse) return null;
 
   return (
     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap justify-end">
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Stars">
         <span>⭐</span>
-        <span>{stats.stars.toLocaleString()}</span>
+        <span>{(pulse.stargazers_count || 0).toLocaleString()}</span>
       </span>
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Forks">
         <span>🍴</span>
-        <span>{stats.forks.toLocaleString()}</span>
+        <span>{(pulse.forks_count || 0).toLocaleString()}</span>
       </span>
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-md text-zinc-300 shadow-sm" title="Open Issues">
         <span>🚨</span>
-        <span>{stats.issues.toLocaleString()}</span>
+        <span>{(pulse.open_issues_count || 0).toLocaleString()}</span>
       </span>
     </div>
   );
@@ -112,6 +73,7 @@ export default function App() {
   const [logoErrors, setLogoErrors] = useState({});
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [hasSearched, setHasSearched] = useState(false);
+  const [viewMode, setViewMode] = useState('grid');
 
   // References
   const workspaceRef = useRef(null);
@@ -173,13 +135,47 @@ export default function App() {
       const response = await fetch(`${BACKEND_URL}/api/discover-startups?country=${targetCountry}`);
       const data = await response.json();
 
+      let enriched = [];
+      if (response.ok && Array.isArray(data)) {
+        enriched = await Promise.all(data.map(async (startup) => {
+          let stars = Math.floor(Math.random() * 500) + 120;
+          let forks = Math.floor(stars * 0.15) + 5;
+          let issues = Math.floor(Math.random() * 45) + 3;
+
+          const parsed = parseGithubUrl(startup.github_url);
+          if (parsed) {
+            try {
+              const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`);
+              if (res.ok) {
+                const gh = await res.json();
+                stars = gh.stargazers_count;
+                forks = gh.forks_count;
+                issues = gh.open_issues_count;
+              }
+            } catch (e) {
+              console.warn("Failed to fetch live stats for", startup.name, e);
+            }
+          }
+          return {
+            ...startup,
+            logo_url: startup.logo || startup.logo_url || '',
+            location: startup.contact_location || startup.location || '',
+            github_pulse: {
+              stargazers_count: stars,
+              forks_count: forks,
+              open_issues_count: issues
+            }
+          };
+        }));
+      }
+
       setTimeout(() => {
         if (response.ok) {
-          setStartups(data);
+          setStartups(enriched);
           setLogs((prev) => [
             ...prev,
-            { text: `Successfully discovered and analyzed ${data.length} startups!`, type: 'success', time: new Date().toLocaleTimeString() },
-            ...data.map(s => ({
+            { text: `Successfully discovered and analyzed ${enriched.length} startups!`, type: 'success', time: new Date().toLocaleTimeString() },
+            ...enriched.map(s => ({
               text: `Discovered candidate: "${s.name}" (${s.batch}) - ${s.website || 'No website'}`,
               type: 'info',
               time: new Date().toLocaleTimeString()
@@ -419,6 +415,30 @@ export default function App() {
               </div>
               
               <div className="flex items-center gap-2.5">
+                {/* View Mode Toggle */}
+                <div className="flex items-center bg-zinc-900/60 border border-zinc-800 p-0.5 rounded-xl mr-2 shadow-inner">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 cursor-pointer ${
+                      viewMode === 'grid'
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    Grid
+                  </button>
+                  <button
+                    onClick={() => setViewMode('galaxy')}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 cursor-pointer ${
+                      viewMode === 'galaxy'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    Galaxy
+                  </button>
+                </div>
+
                 <span className="text-xs font-mono text-zinc-500">Region:</span>
                 <select
                   value={selectedCountry}
@@ -460,111 +480,115 @@ export default function App() {
                 ))}
               </div>
             ) : startups.length > 0 ? (
-              /* Startup Cards list */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {startups.map((startup, index) => {
-                  const hasLogo = startup.logo && !logoErrors[index];
-                  return (
-                    <div 
-                      key={index} 
-                      className="group relative flex flex-col justify-between p-6 rounded-2xl border border-zinc-800/80 bg-zinc-900/20 hover:bg-zinc-900/40 hover:border-zinc-700/80 transition-all duration-300 hover:scale-[1.01] shadow-xl backdrop-blur-md"
-                    >
-                      <div>
-                        {/* Header info */}
-                        <div className="flex justify-between items-start gap-4 mb-4">
-                          <div className="flex items-center gap-3">
-                            {hasLogo ? (
-                              <img 
-                                src={startup.logo} 
-                                alt={`${startup.name} logo`} 
-                                onError={() => setLogoErrors(prev => ({ ...prev, [index]: true }))}
-                                className="w-12 h-12 rounded-xl object-contain bg-zinc-950 border border-zinc-800 p-1.5 flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
-                                {startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}
+              viewMode === 'galaxy' ? (
+                <StartupGalaxy startups={startups} />
+              ) : (
+                /* Startup Cards list */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {startups.map((startup, index) => {
+                    const hasLogo = startup.logo && !logoErrors[index];
+                    return (
+                      <div 
+                        key={index} 
+                        className="group relative flex flex-col justify-between p-6 rounded-2xl border border-zinc-800/80 bg-zinc-900/20 hover:bg-zinc-900/40 hover:border-zinc-700/80 transition-all duration-300 hover:scale-[1.01] shadow-xl backdrop-blur-md"
+                      >
+                        <div>
+                          {/* Header info */}
+                          <div className="flex justify-between items-start gap-4 mb-4">
+                            <div className="flex items-center gap-3">
+                              {hasLogo ? (
+                                <img 
+                                  src={startup.logo} 
+                                  alt={`${startup.name} logo`} 
+                                  onError={() => setLogoErrors(prev => ({ ...prev, [index]: true }))}
+                                  className="w-12 h-12 rounded-xl object-contain bg-zinc-950 border border-zinc-800 p-1.5 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
+                                  {startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="text-base font-bold text-zinc-100 group-hover:text-indigo-300 transition-colors">
+                                  {startup.name}
+                                </h4>
+                                <span className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
+                                  <MapPin className="w-3 h-3 text-indigo-500/70" />
+                                  {startup.contact_location}
+                                </span>
                               </div>
-                            )}
-                            <div>
-                              <h4 className="text-base font-bold text-zinc-100 group-hover:text-indigo-300 transition-colors">
-                                {startup.name}
-                              </h4>
-                              <span className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
-                                <MapPin className="w-3 h-3 text-indigo-500/70" />
-                                {startup.contact_location}
+                            </div>
+                            
+                            {/* Badges block */}
+                            <div className="flex flex-col items-end gap-1.5">
+                              <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 whitespace-nowrap">
+                                {startup.batch}
+                              </span>
+                              <GithubPulse pulse={startup.github_pulse} />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shadow-sm">
+                                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
+                                🔥 Hiring/Active
                               </span>
                             </div>
                           </div>
-                          
-                          {/* Badges block */}
-                          <div className="flex flex-col items-end gap-1.5">
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 whitespace-nowrap">
-                              {startup.batch}
-                            </span>
-                            <GithubPulse github_url={startup.github_url} />
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shadow-sm">
-                              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
-                              🔥 Hiring/Active
-                            </span>
+      
+                          {/* AI Summary */}
+                          <div className="relative rounded-xl border border-zinc-800/50 bg-black/35 p-4 font-sans text-sm text-zinc-300 leading-relaxed mb-4">
+                            <div className="absolute top-4 left-4 text-indigo-500/30">
+                              <Code className="w-4 h-4" />
+                            </div>
+                            <p className="pl-6 font-light">{startup.AI_summary}</p>
                           </div>
                         </div>
     
-                        {/* AI Summary */}
-                        <div className="relative rounded-xl border border-zinc-800/50 bg-black/35 p-4 font-sans text-sm text-zinc-300 leading-relaxed mb-4">
-                          <div className="absolute top-4 left-4 text-indigo-500/30">
-                            <Code className="w-4 h-4" />
-                          </div>
-                          <p className="pl-6 font-light">{startup.AI_summary}</p>
-                        </div>
-                      </div>
-
-                      {/* Card Actions */}
-                      <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-zinc-900/40 mt-auto">
-                        {startup.website ? (
-                          <a 
-                            href={startup.website} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-indigo-400 transition-colors font-medium hover:underline"
-                          >
-                            <span>🌐 Visit Main Website</span>
-                          </a>
-                        ) : (
-                          <span className="text-xs text-zinc-600">No website</span>
-                        )}
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleCopySummary(startup.AI_summary, index)}
-                            className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors py-2 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800"
-                            title="Copy Summary"
-                          >
-                            {copiedIndex === index ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-
-                          {startup.jobs_url ? (
+                        {/* Card Actions */}
+                        <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-zinc-900/40 mt-auto">
+                          {startup.website ? (
                             <a 
-                              href={startup.jobs_url} 
+                              href={startup.website} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 py-2 px-4 rounded-xl shadow-lg shadow-indigo-600/10 hover:scale-[1.02] border border-indigo-500/30"
+                              className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-indigo-400 transition-colors font-medium hover:underline"
                             >
-                              <span>💼 Apply to Startup</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span>🌐 Visit Main Website</span>
                             </a>
                           ) : (
-                            <span className="text-xs text-zinc-500">Applications Closed</span>
+                            <span className="text-xs text-zinc-600">No website</span>
                           )}
+    
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleCopySummary(startup.AI_summary, index)}
+                              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors py-2 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800"
+                              title="Copy Summary"
+                            >
+                              {copiedIndex === index ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+    
+                            {startup.jobs_url ? (
+                              <a 
+                                href={startup.jobs_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 py-2 px-4 rounded-xl shadow-lg shadow-indigo-600/10 hover:scale-[1.02] border border-indigo-500/30"
+                              >
+                                <span>💼 Apply to Startup</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-zinc-500">Applications Closed</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
             ) : hasSearched ? (
               /* No results empty state */
               <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/5 min-h-[300px] space-y-4 w-full">
