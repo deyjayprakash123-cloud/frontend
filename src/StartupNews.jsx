@@ -1,5 +1,136 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, AlertCircle, Cpu } from 'lucide-react';
+import { BookOpen, AlertCircle } from 'lucide-react';
+
+const BACKEND_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://link-backend-o76j.onrender.com';
+
+// NewsBlock Subcomponent to render a single log-styled article with summarization controls
+function NewsBlock({ story, hasStartupKeyword, formatTimestamp }) {
+  const [summary, setSummary] = useState("");
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
+
+  const isStartupItem = hasStartupKeyword(story.title);
+  const articleUrl = story.url || `https://news.ycombinator.com/item?id=${story.id}`;
+
+  const handleSummarize = async () => {
+    if (isLoadingSummary || summary) return;
+    setIsLoadingSummary(true);
+    setSummaryError("");
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/summarize-news`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: story.title,
+          url: articleUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Summary request failed.");
+      }
+
+      const data = await response.json();
+      setSummary(data.summary);
+    } catch (err) {
+      console.error("Summarization failed:", err);
+      setSummaryError(err.message || "Failed to compile summary.");
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
+
+  return (
+    <article
+      className={`flex flex-col p-3.5 border bg-black hover:bg-emerald-950/10 transition-none ${
+        isStartupItem
+          ? 'border-emerald-400'
+          : 'border-emerald-400/40'
+      }`}
+    >
+      {/* Headline formatted as scroll log prefix: [hh:mm:ss] SYSTEM PUSH // Title */}
+      <div className="text-xs md:text-sm font-bold text-emerald-400 leading-snug mb-2 flex items-start gap-1 flex-wrap">
+        <span className="text-emerald-555 select-none font-mono">
+          {formatTimestamp(story.time)} SYSTEM PUSH //
+        </span>
+        <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+          {story.title}
+        </a>
+      </div>
+
+      {/* Loading datastream feedback */}
+      {isLoadingSummary && (
+        <div className="text-[10px] font-mono text-emerald-400 animate-pulse my-2">
+          &gt; ANALYZING DATASTREAM...
+        </div>
+      )}
+
+      {/* Error feedback */}
+      {summaryError && (
+        <div className="text-[10px] font-mono text-red-500 my-2">
+          &gt; ERROR: {summaryError.toUpperCase()}
+        </div>
+      )}
+
+      {/* Display result summary output block */}
+      {summary && (
+        <div className="border-l border-emerald-400 pl-3 py-1.5 my-2 text-xs font-mono text-emerald-500 bg-black/40">
+          <div className="text-[9px] font-bold text-emerald-700 select-none mb-0.5">
+            &gt; SUMMARY_OUTPUT:
+          </div>
+          <p className="font-light">{summary}</p>
+        </div>
+      )}
+
+      {/* Telemetry metadata footer inside brackets */}
+      <div className="flex justify-between items-center pt-2.5 border-t border-emerald-400/20 select-none text-[9px] font-mono text-emerald-600">
+        <div className="flex flex-wrap items-center gap-3">
+          <span>
+            [ PRIORITY: {isStartupItem ? "HIGH_STARTUP" : "STANDARD_TECH"} ]
+          </span>
+          <span>
+            [ SCORE: {story.score || 0} UPVOTES ]
+          </span>
+          <span>
+            [ SENDER: {story.by || 'Anonymous'} ]
+          </span>
+          <span>
+            [ CAT: {isStartupItem ? "STARTUP_RADAR" : "GENERAL_NET"} ]
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Summarize CTA */}
+          <button
+            onClick={handleSummarize}
+            disabled={isLoadingSummary || !!summary}
+            className={`text-[9px] px-1.5 py-0.5 border cursor-pointer font-bold ${
+              summary
+                ? "bg-black text-emerald-600 border-emerald-400/30 cursor-not-allowed"
+                : isLoadingSummary
+                ? "bg-black text-amber-500 border-amber-500/50 animate-pulse cursor-wait"
+                : "bg-black text-emerald-400 border-emerald-400 hover:bg-emerald-400 hover:text-black"
+            }`}
+          >
+            {summary ? "[ SUMMARY COMPILED ]" : "[ RUN: SUMMARIZE.EXE ]"}
+          </button>
+
+          <a
+            href={articleUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-400 hover:text-black hover:bg-emerald-400 p-0.5 transition-none"
+          >
+            [ READ_ARTICLE ]
+          </a>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 // Timestamp formatting helper: converts unix time to [hh:mm:ss] format
 function formatTimestamp(unixTimestamp) {
@@ -227,58 +358,14 @@ export default function StartupNews() {
         ) : processedArticles.length > 0 ? (
           /* Real-time article log list - Tightly packed */
           <div className="grid grid-cols-1 gap-2.5">
-            {processedArticles.map((story) => {
-              const isStartupItem = hasStartupKeyword(story.title);
-              const articleUrl = story.url || `https://news.ycombinator.com/item?id=${story.id}`;
-
-              return (
-                <article
-                  key={story.id}
-                  className={`flex flex-col p-3.5 border bg-black hover:bg-emerald-950/10 transition-colors ${
-                    isStartupItem
-                      ? 'border-emerald-400 shadow-[0_0_10px_rgba(0,255,65,0.05)]'
-                      : 'border-emerald-400/40'
-                  }`}
-                >
-                  {/* Headline formatted as scroll log prefix: [hh:mm:ss] SYSTEM PUSH: Title */}
-                  <div className="text-xs md:text-sm font-bold text-emerald-400 leading-snug mb-2 flex items-start gap-1 flex-wrap">
-                    <span className="text-emerald-550 select-none font-mono">
-                      {formatTimestamp(story.time)} SYSTEM PUSH //
-                    </span>
-                    <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      {story.title}
-                    </a>
-                  </div>
-
-                  {/* Telemetry metadata footer inside brackets */}
-                  <div className="flex justify-between items-center pt-2.5 border-t border-emerald-400/20 select-none text-[9px] font-mono text-emerald-600">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span>
-                        [ PRIORITY: {isStartupItem ? "HIGH_STARTUP" : "STANDARD_TECH"} ]
-                      </span>
-                      <span>
-                        [ SCORE: {story.score || 0} UPVOTES ]
-                      </span>
-                      <span>
-                        [ SENDER: {story.by || 'Anonymous'} ]
-                      </span>
-                      <span>
-                        [ CAT: {isStartupItem ? "STARTUP_RADAR" : "GENERAL_NET"} ]
-                      </span>
-                    </div>
-
-                    <a
-                      href={articleUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-400 hover:text-black hover:bg-emerald-400 p-0.5 transition-colors"
-                    >
-                      [ READ_ARTICLE ]
-                    </a>
-                  </div>
-                </article>
-              );
-            })}
+            {processedArticles.map((story) => (
+              <NewsBlock
+                key={story.id}
+                story={story}
+                hasStartupKeyword={hasStartupKeyword}
+                formatTimestamp={formatTimestamp}
+              />
+            ))}
           </div>
         ) : (
           /* Empty state */
