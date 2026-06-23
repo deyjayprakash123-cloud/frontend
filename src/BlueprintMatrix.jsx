@@ -236,6 +236,16 @@ export default function BlueprintMatrix() {
                           )}
                         </div>
                       </div>
+
+                      {/* Infrastructure Depth Deep-Scan Metric */}
+                      <div className="text-xs font-mono border border-emerald-500/30 p-2 bg-emerald-950/10">
+                        <span className="text-emerald-300 font-bold block mb-1" style={{ textShadow: '0 0 4px rgba(110, 231, 183, 0.5)' }}>
+                          &gt; INFRASTRUCTURE_DEPTH:
+                        </span>
+                        <span className="text-emerald-100 leading-normal">
+                          {item.infrastructure_depth ? item.infrastructure_depth : "[ STANDARD_SCAN_ONLY ]"}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Diagnostic log note */}
