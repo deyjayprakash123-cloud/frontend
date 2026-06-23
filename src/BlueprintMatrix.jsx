@@ -190,6 +190,16 @@ export default function BlueprintMatrix() {
                         </div>
                       </div>
 
+                      {/* Infrastructure Depth Deep-Scan Metric */}
+                      <div className="text-xs font-mono border border-emerald-500/30 p-2 bg-emerald-950/10">
+                        <span className="text-emerald-300 font-bold block mb-1" style={{ textShadow: '0 0 8px rgba(0, 255, 0, 0.8)' }}>
+                          &gt; INFRASTRUCTURE_DEPTH:
+                        </span>
+                        <span className="text-emerald-100 leading-normal" style={{ textShadow: '0 0 8px rgba(0, 255, 0, 0.8)' }}>
+                          {item.infrastructure_depth ? item.infrastructure_depth : "[ BASIC_TELEMETRY_LOG ]"}
+                        </span>
+                      </div>
+
                       {/* Proof Nodes UI */}
                       <div className="text-xs font-mono">
                         <span className="text-emerald-600 font-bold block mb-1">&gt; PROOF_NODES:</span>
@@ -235,16 +245,6 @@ export default function BlueprintMatrix() {
                             <span className="text-emerald-700">[ NONE ]</span>
                           )}
                         </div>
-                      </div>
-
-                      {/* Infrastructure Depth Deep-Scan Metric */}
-                      <div className="text-xs font-mono border border-emerald-500/30 p-2 bg-emerald-950/10">
-                        <span className="text-emerald-300 font-bold block mb-1" style={{ textShadow: '0 0 4px rgba(110, 231, 183, 0.5)' }}>
-                          &gt; INFRASTRUCTURE_DEPTH:
-                        </span>
-                        <span className="text-emerald-100 leading-normal">
-                          {item.infrastructure_depth ? item.infrastructure_depth : "[ STANDARD_SCAN_ONLY ]"}
-                        </span>
                       </div>
                     </div>
 
