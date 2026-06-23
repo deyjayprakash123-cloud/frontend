@@ -50,6 +50,7 @@ export default function StartupDiscover() {
   const [logs, setLogs] = useState([
     { text: '// Discovery Engine ready. Operational Console standing by.', type: 'info' },
   ]);
+  const [activeSystem, setActiveSystem] = useState('YC_LOCAL_RADAR');
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [startups, setStartups] = useState([]);
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -89,18 +90,32 @@ export default function StartupDiscover() {
     const targetCountry = (typeof countryParam === 'string') ? countryParam : selectedCountry;
 
     // Clear logs and push initiation logs
-    setLogs([
-      { text: `// Initializing YC Startup Discovery Pipeline (Region: ${targetCountry})...`, type: 'info', time: new Date().toLocaleTimeString() }
-    ]);
+    if (activeSystem === 'GLOBAL_NETWORK_SCAN') {
+      setLogs([
+        { text: `// Initializing Global Network Radar Pipeline...`, type: 'info', time: new Date().toLocaleTimeString() }
+      ]);
+    } else {
+      setLogs([
+        { text: `// Initializing YC Startup Discovery Pipeline (Region: ${targetCountry})...`, type: 'info', time: new Date().toLocaleTimeString() }
+      ]);
+    }
 
     // Simulated log timeline to make it feel extremely interactive
-    const logSteps = [
-      { text: 'Connecting to live Y Combinator Open Source Index...', delay: 600, type: 'info' },
-      { text: 'Downloading database payload from yc-oss.github.io...', delay: 1400, type: 'info' },
-      { text: 'Filtering list for Active startups (Status: "Active")...', delay: 2400, type: 'info' },
-      { text: `Sieving regional tech candidates matching "${targetCountry}"...`, delay: 3500, type: 'info' },
-      { text: 'Selecting 5 dynamic candidates and running Gemini 3.1 Flash-Lite engine...', delay: 4800, type: 'success' }
-    ];
+    const logSteps = activeSystem === 'GLOBAL_NETWORK_SCAN'
+      ? [
+          { text: 'Connecting to Global Network Nodes (YC, Arbeitnow, RemoteOK)...', delay: 600, type: 'info' },
+          { text: 'Downloading data streams from YC OSS, ArbeitNow, and RemoteOK...', delay: 1400, type: 'info' },
+          { text: 'Mapping disparate payloads to uniform entity format...', delay: 2400, type: 'info' },
+          { text: 'Interleaving streams & slicing top 5 candidate nodes...', delay: 3500, type: 'info' },
+          { text: 'Initiating telemetry: Processing batch of 5 with Gemini 3.1 Flash-Lite...', delay: 4800, type: 'success' }
+        ]
+      : [
+          { text: 'Connecting to live Y Combinator Open Source Index...', delay: 600, type: 'info' },
+          { text: 'Downloading database payload from yc-oss.github.io...', delay: 1400, type: 'info' },
+          { text: 'Filtering list for Active startups (Status: "Active")...', delay: 2400, type: 'info' },
+          { text: `Sieving regional tech candidates matching "${targetCountry}"...`, delay: 3500, type: 'info' },
+          { text: 'Selecting 5 dynamic candidates and running Gemini 3.1 Flash-Lite engine...', delay: 4800, type: 'success' }
+        ];
 
     logSteps.forEach((step) => {
       setTimeout(() => {
@@ -109,7 +124,11 @@ export default function StartupDiscover() {
     });
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/discover-startups?country=${targetCountry}`);
+      const fetchUrl = activeSystem === 'GLOBAL_NETWORK_SCAN'
+        ? `${BACKEND_URL}/api/global-radar`
+        : `${BACKEND_URL}/api/discover-startups?country=${targetCountry}`;
+
+      const response = await fetch(fetchUrl);
       const data = await response.json();
 
       let enriched = [];
@@ -119,7 +138,8 @@ export default function StartupDiscover() {
           let forks = Math.floor(stars * 0.15) + 5;
           let issues = Math.floor(Math.random() * 45) + 3;
 
-          const parsed = parseGithubUrl(startup.github_url);
+          const githubUrl = startup.github_url || '';
+          const parsed = parseGithubUrl(githubUrl);
           if (parsed) {
             try {
               const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`);
@@ -133,10 +153,26 @@ export default function StartupDiscover() {
               console.warn("Failed to fetch live stats for", startup.name, e);
             }
           }
+          
+          // Normalize the data format from different streams
+          const name = startup.name || 'Unknown Company';
+          const AI_summary = startup.telemetry_diagnostic || startup.AI_summary || '';
+          const jobs_url = startup.target_link || startup.jobs_url || '';
+          const website = startup.target_link || startup.website || '';
+          const location = startup.hq_location || startup.contact_location || startup.location || 'Remote';
+          const origin_platform = startup.origin_platform || 'YC Open Source';
+          const batch = startup.batch || 'Global';
+
           return {
             ...startup,
+            name,
+            AI_summary,
+            jobs_url,
+            website,
+            location,
+            origin_platform,
+            batch,
             logo_url: startup.logo || startup.logo_url || '',
-            location: startup.contact_location || startup.location || '',
             github_pulse: {
               stargazers_count: stars,
               forks_count: forks,
@@ -151,9 +187,9 @@ export default function StartupDiscover() {
           setStartups(enriched);
           setLogs((prev) => [
             ...prev,
-            { text: `Successfully discovered and analyzed ${enriched.length} startups!`, type: 'success', time: new Date().toLocaleTimeString() },
+            { text: `Successfully discovered and analyzed ${enriched.length} node entities!`, type: 'success', time: new Date().toLocaleTimeString() },
             ...enriched.map(s => ({
-              text: `Discovered candidate: "${s.name}" (${s.batch}) - ${s.website || 'No website'}`,
+              text: `Discovered node: "${s.name}" [SRC: ${s.origin_platform}] - ${s.website || 'No website'}`,
               type: 'info',
               time: new Date().toLocaleTimeString()
             }))
@@ -171,17 +207,17 @@ export default function StartupDiscover() {
       setTimeout(() => {
         setLogs((prev) => [
           ...prev,
-          { text: `Network connection to ${BACKEND_URL} failed: ${error.message}`, type: 'error', time: new Date().toLocaleTimeString() }
+          { text: `Network connection to backend failed: ${error.message}`, type: 'error', time: new Date().toLocaleTimeString() }
         ]);
         setIsDiscovering(false);
       }, 5500);
     }
   };
 
-  // Auto-fetch whenever selectedCountry changes
+  // Auto-fetch whenever selectedCountry or activeSystem changes
   useEffect(() => {
     handleDiscoverStartups(selectedCountry);
-  }, [selectedCountry]);
+  }, [selectedCountry, activeSystem]);
 
   const handleCopySummary = async (text, index) => {
     if (!text) return;
@@ -192,6 +228,14 @@ export default function StartupDiscover() {
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
+  };
+
+  const getSourceBadge = (platform) => {
+    const plat = (platform || '').toUpperCase();
+    if (plat.includes('YC') || plat.includes('COMBINATOR')) return '[SRC: Y_COMBINATOR]';
+    if (plat.includes('ARBEIT') || plat.includes('JOB')) return '[SRC: ARBEITNOW]';
+    if (plat.includes('REMOTE')) return '[SRC: REMOTE_OK]';
+    return `[SRC: ${plat.replace(/\s+/g, '_')}]`;
   };
 
   return (
@@ -209,7 +253,7 @@ export default function StartupDiscover() {
             </p>
           </div>
           <div className="text-xs font-mono px-2.5 py-1 bg-black text-emerald-400 border border-emerald-400 shadow-inner">
-            DISCOVERY_API // {BACKEND_URL}/api/discover-startups
+            DISCOVERY_API // {activeSystem === 'GLOBAL_NETWORK_SCAN' ? `${BACKEND_URL}/api/global-radar` : `${BACKEND_URL}/api/discover-startups`}
           </div>
         </div>
 
@@ -249,6 +293,30 @@ export default function StartupDiscover() {
 
       {/* 2. OPERATIONAL WORKSPACE */}
       <section className="max-w-6xl mx-auto px-2 py-4 w-full">
+        {/* Retro Control Terminal Toggle */}
+        <div className="flex flex-wrap gap-3 mb-5 select-none font-mono">
+          <button
+            onClick={() => setActiveSystem('YC_LOCAL_RADAR')}
+            className={`px-4 py-2 border text-xs font-bold tracking-wider transition-all duration-100 cursor-pointer ${
+              activeSystem === 'YC_LOCAL_RADAR'
+                ? 'bg-emerald-400 text-black border-emerald-400'
+                : 'bg-black text-emerald-400 border-emerald-400/50 hover:bg-emerald-950/40'
+            }`}
+          >
+            [ SYSTEM: YC_LOCAL_RADAR ]
+          </button>
+          <button
+            onClick={() => setActiveSystem('GLOBAL_NETWORK_SCAN')}
+            className={`px-4 py-2 border text-xs font-bold tracking-wider transition-all duration-100 cursor-pointer ${
+              activeSystem === 'GLOBAL_NETWORK_SCAN'
+                ? 'bg-emerald-400 text-black border-emerald-400'
+                : 'bg-black text-emerald-400 border-emerald-400/50 hover:bg-emerald-950/40'
+            }`}
+          >
+            [ SYSTEM: GLOBAL_NETWORK_SCAN ]
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           
           {/* Left Column: Controls & Console Logs */}
@@ -261,7 +329,9 @@ export default function StartupDiscover() {
                   [ PIPELINE_CONTROLS ]
                 </h3>
                 <p className="text-[10px] text-emerald-600">
-                  Trigger YC index scraping and Gemini synthesis.
+                  {activeSystem === 'GLOBAL_NETWORK_SCAN' 
+                    ? 'Trigger global multi-source scrape and Gemini synthesis.'
+                    : 'Trigger YC index scraping and Gemini synthesis.'}
                 </p>
               </div>
 
@@ -275,7 +345,7 @@ export default function StartupDiscover() {
                     : 'bg-black text-emerald-400 border border-emerald-400 hover:bg-emerald-400 hover:text-black'
                 }`}
               >
-                {isDiscovering ? '[ RUNNING_PIPELINE... ]' : '[ RUN_YC_DISCOVERY ]'}
+                {isDiscovering ? '[ RUNNING_PIPELINE... ]' : (activeSystem === 'GLOBAL_NETWORK_SCAN' ? '[ RUN_GLOBAL_SCAN ]' : '[ RUN_YC_DISCOVERY ]')}
               </button>
             </div>
 
@@ -354,23 +424,32 @@ export default function StartupDiscover() {
                   </button>
                 </div>
 
-                <span className="text-xs font-mono text-emerald-600 select-none">REG:</span>
-                <select
-                  value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="bg-black border border-emerald-400 text-emerald-400 text-xs font-bold focus:bg-emerald-950 cursor-pointer block p-1.5 focus:outline-none"
-                >
-                  <option value="All">ALL_REGIONS</option>
-                  <option value="United States">UNITED_STATES</option>
-                  <option value="India">INDIA</option>
-                  <option value="United Kingdom">UNITED_KINGDOM</option>
-                  <option value="Canada">CANADA</option>
-                  <option value="Singapore">SINGAPORE</option>
-                  <option value="Germany">GERMANY</option>
-                </select>
+                {activeSystem !== 'GLOBAL_NETWORK_SCAN' ? (
+                  <>
+                    <span className="text-xs font-mono text-emerald-650 select-none">REG:</span>
+                    <select
+                      value={selectedCountry}
+                      onChange={(e) => setSelectedCountry(e.target.value)}
+                      className="bg-black border border-emerald-400 text-emerald-400 text-xs font-bold focus:bg-emerald-950 cursor-pointer block p-1.5 focus:outline-none"
+                    >
+                      <option value="All">ALL_REGIONS</option>
+                      <option value="United States">UNITED_STATES</option>
+                      <option value="India">INDIA</option>
+                      <option value="United Kingdom">UNITED_KINGDOM</option>
+                      <option value="Canada">CANADA</option>
+                      <option value="Singapore">SINGAPORE</option>
+                      <option value="Germany">GERMANY</option>
+                    </select>
+                  </>
+                ) : (
+                  <span className="text-xs font-mono text-emerald-600 bg-emerald-950/35 border border-emerald-400/40 px-2.5 py-1.5 select-none font-bold">
+                    [ NODE_SCAN: ALL_CHANNELS ]
+                  </span>
+                )}
+                
                 {startups.length > 0 && (
-                  <span className="text-xs font-mono text-emerald-450 bg-emerald-950/20 px-2 py-1 border border-emerald-400 select-none">
-                    [ {startups.length} CANDIDATES ]
+                  <span className="text-xs font-mono text-emerald-450 bg-emerald-950/20 px-2 py-1 border border-emerald-400 select-none font-bold">
+                    [ {startups.length} NODES ]
                   </span>
                 )}
               </div>
@@ -398,28 +477,34 @@ export default function StartupDiscover() {
               viewMode === 'galaxy' ? (
                 <StartupGalaxy startups={startups} />
               ) : (
-                /* Startup Cards list as Data Blocks */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                /* Startup Cards list as High-Density Data Blocks with sharp 90-degree corners */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {startups.map((startup, index) => {
                     return (
                       <div 
                         key={index} 
-                        className="flex flex-col justify-between p-4 border border-emerald-400 bg-black hover:bg-emerald-950/10 transition-colors"
+                        className="relative flex flex-col justify-between p-4 border border-emerald-400 bg-black hover:bg-emerald-950/10 transition-colors font-mono"
                       >
+                        {/* Sharp 90-degree corner joints absolute-positioned */}
+                        <span className="absolute top-0 left-0 -translate-x-[1px] -translate-y-[4px] text-emerald-400 font-bold bg-black select-none leading-none z-10">+</span>
+                        <span className="absolute top-0 right-0 translate-x-[1px] -translate-y-[4px] text-emerald-400 font-bold bg-black select-none leading-none z-10">+</span>
+                        <span className="absolute bottom-0 left-0 -translate-x-[1px] translate-y-[4px] text-emerald-400 font-bold bg-black select-none leading-none z-10">+</span>
+                        <span className="absolute bottom-0 right-0 translate-x-[1px] translate-y-[4px] text-emerald-400 font-bold bg-black select-none leading-none z-10">+</span>
+
                         <div>
                           {/* Header info */}
                           <div className="flex justify-between items-start gap-2.5 mb-3">
                             <div className="flex items-center gap-3">
-                              {/* Pure text bracketed ASCII initial instead of image/logo */}
-                              <div className="w-10 h-10 border border-emerald-400 bg-black flex items-center justify-center text-emerald-400 font-bold text-base flex-shrink-0 select-none">
-                                [{startup.name ? startup.name.charAt(0).toUpperCase() : 'Y'}]
+                              {/* Retro text source badge instead of logo */}
+                              <div className="text-[10px] font-bold text-emerald-400 border border-emerald-400 px-2 py-1.5 bg-black select-none font-mono whitespace-nowrap">
+                                {getSourceBadge(startup.origin_platform)}
                               </div>
                               <div>
                                 <h4 className="text-sm font-bold text-emerald-400 leading-tight">
                                   {startup.name}
                                 </h4>
                                 <span className="text-[10px] text-emerald-650 flex items-center gap-1 mt-0.5 font-mono select-none">
-                                  [ LOC: {startup.contact_location} ]
+                                  [ LOC: {startup.location} ]
                                 </span>
                               </div>
                             </div>
@@ -436,12 +521,18 @@ export default function StartupDiscover() {
                             </div>
                           </div>
       
-                          {/* AI Summary in bracket format */}
-                          <div className="border border-emerald-400/40 bg-black p-3 font-mono text-xs text-emerald-500 leading-relaxed mb-3">
-                            <div className="text-[9px] font-bold text-emerald-700 mb-1 select-none">
-                              [ AI_SYNTHESIS_REPORT ]
+                          {/* AI Summary in sharp corner structured sub-block */}
+                          <div className="border border-emerald-400/40 bg-black p-3 font-mono text-xs text-emerald-500 leading-relaxed mb-3 relative">
+                            {/* Sub-block ASCII Corners */}
+                            <span className="absolute top-0 left-0 -translate-x-[1px] -translate-y-[4px] text-emerald-400/50 bg-black font-bold leading-none select-none">+</span>
+                            <span className="absolute top-0 right-0 translate-x-[1px] -translate-y-[4px] text-emerald-400/50 bg-black font-bold leading-none select-none">+</span>
+                            <span className="absolute bottom-0 left-0 -translate-x-[1px] translate-y-[4px] text-emerald-400/50 bg-black font-bold leading-none select-none">+</span>
+                            <span className="absolute bottom-0 right-0 translate-x-[1px] translate-y-[4px] text-emerald-400/50 bg-black font-bold leading-none select-none">+</span>
+
+                            <div className="text-[10px] font-bold text-emerald-400 mb-1.5 select-none">
+                              &gt; EXTRACTED_ENGINEERING_PROFILE:
                             </div>
-                            <p className="font-light">{startup.AI_summary}</p>
+                            <p className="font-light whitespace-pre-wrap">{startup.AI_summary || "NO DIAGNOSTIC DATA AVAILABLE."}</p>
                           </div>
                         </div>
     
@@ -463,7 +554,7 @@ export default function StartupDiscover() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleCopySummary(startup.AI_summary, index)}
-                              className="text-[10px] p-0.5 border border-emerald-400 bg-black text-emerald-400 hover:bg-emerald-400 hover:text-black cursor-pointer"
+                              className="text-[10px] p-0.5 border border-emerald-400 bg-black text-emerald-400 hover:bg-emerald-400 hover:text-black cursor-pointer font-mono"
                             >
                               {copiedIndex === index ? '[ COPIED ]' : '[ COPY ]'}
                             </button>
@@ -473,12 +564,12 @@ export default function StartupDiscover() {
                                 href={startup.jobs_url} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="border border-emerald-400 bg-black text-emerald-400 hover:bg-emerald-400 hover:text-black p-0.5 transition-colors"
+                                className="border border-emerald-400 bg-black text-emerald-400 hover:bg-emerald-400 hover:text-black p-0.5 transition-colors font-bold"
                               >
-                                [ APPLY_NOW ]
+                                [ EXECUTE: APPLY_TO_NODE ]
                               </a>
                             ) : (
-                              <span className="text-emerald-700">[ APPS_CLOSED ]</span>
+                              <span className="text-emerald-700 font-bold">[ NODE_CLOSED ]</span>
                             )}
                           </div>
                         </div>
@@ -490,14 +581,14 @@ export default function StartupDiscover() {
             ) : hasSearched ? (
               /* No results empty state */
               <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-emerald-400 bg-black min-h-[250px] space-y-3 w-full font-mono text-xs">
-                <div className="text-emerald-600 select-none">
+                <div className="text-emerald-650 select-none">
                   [ ERROR: NO CANDIDATES FOUND IN THIS REGION ]
                 </div>
               </div>
             ) : (
               /* Initial state empty placeholder */
               <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-emerald-400 bg-black min-h-[250px] space-y-3 w-full font-mono text-xs">
-                <div className="text-emerald-650 animate-pulse select-none">
+                <div className="text-emerald-655 animate-pulse select-none">
                   [ PIPELINE IDLE // AWAITING TRIGGERS ]
                 </div>
               </div>
