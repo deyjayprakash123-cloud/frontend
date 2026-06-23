@@ -1,34 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Canvas, useFrame } from '@react-three/fiber';
-
-// Infinite scrolling 3D wireframe grid floor component
-function InfiniteGrid() {
-  const gridRef = useRef();
-
-  useFrame((state) => {
-    if (gridRef.current) {
-      // Cell spacing = 2 units (size 120 / divisions 60).
-      // Modulo 2 z-translation creates a seamless infinite scroll loop.
-      const scrollSpeed = 3.2;
-      gridRef.current.position.z = (state.clock.getElapsedTime() * scrollSpeed) % 2;
-    }
-  });
-
-  return (
-    <group ref={gridRef}>
-      <gridHelper 
-        args={[120, 60, '#00ff41', '#002b0c']} 
-        position={[0, -4.5, 0]} 
-      />
-    </group>
-  );
-}
 
 const BOOT_LOGS = [
   "[OK] INITIALIZING BOOT SEQUENCER COMPLETED.",
-  "[OK] DETECTED R3F WEBGL DEVICE HARDWARE...",
-  "[OK] LOADED COSMOS MATRIX COORDINATES (minDistance = 5.0)...",
+  "[OK] DETECTED RETRO STACK ENGINE COMPATIBILITY...",
+  "[OK] LOADED COSMOS MATRIX COORDINATES...",
   "[OK] SYNCING ARCHIVES DEYJAYPRAKASH123-CLOUD/PROFILE...",
   "[OK] CONNECTED TO STREAM // HACKER_NEWS_SSE_FIREBASE",
   "[OK] UPLINK ONLINE // INTEL_LAYER_GEMINI_3.5",
@@ -75,19 +51,17 @@ export default function LandingPage() {
   }, [currentLineIndex]);
 
   return (
-    <div className="relative min-h-[92vh] flex flex-col justify-center items-center overflow-hidden bg-black w-full select-none">
+    <div className="relative min-h-[92vh] flex flex-col justify-center items-center overflow-hidden bg-black w-full select-none font-mono">
       
-      {/* 3D Tilted Wireframe Grid Floor with Horizon Fog */}
-      <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
-        <Canvas camera={{ position: [0, 1.5, 9], fov: 60 }}>
-          <color attach="background" args={['#000000']} />
-          {/* Horizon black fog masks line edges */}
-          <fog attach="fog" args={['#000000', 4, 18]} />
-          
-          <ambientLight intensity={0.5} />
-          <InfiniteGrid />
-        </Canvas>
-      </div>
+      {/* 2D Scrolling Grid Background (Pure CSS - replaces 3D Canvas) */}
+      <div 
+        className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(0, 255, 65, 0.1) 25%, rgba(0, 255, 65, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 255, 65, 0.1) 75%, rgba(0, 255, 65, 0.1) 76%, transparent 77%), linear-gradient(90deg, transparent 24%, rgba(0, 255, 65, 0.1) 25%, rgba(0, 255, 65, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 255, 65, 0.1) 75%, rgba(0, 255, 65, 0.1) 76%, transparent 77%)',
+          backgroundSize: '50px 50px',
+          animation: 'scrollGrid 20s linear infinite',
+        }}
+      ></div>
 
       {/* Screen Vignette Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/90 pointer-events-none z-5"></div>
@@ -146,6 +120,10 @@ export default function LandingPage() {
         @keyframes blink {
           0%, 100% { opacity: 0; }
           50% { opacity: 1; }
+        }
+        @keyframes scrollGrid {
+          0% { background-position: 0 0; }
+          100% { background-position: 0 500px; }
         }
       `}</style>
 
