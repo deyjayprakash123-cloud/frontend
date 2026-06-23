@@ -58,6 +58,7 @@ export default function StartupDiscover() {
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [hasSearched, setHasSearched] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
+  const [scanLimit, setScanLimit] = useState(5);
 
   // References
   const terminalEndRef = useRef(null);
@@ -106,8 +107,8 @@ export default function StartupDiscover() {
           { text: 'Connecting to Global Network Nodes (YC, Arbeitnow, RemoteOK)...', delay: 600, type: 'info' },
           { text: 'Downloading data streams from YC OSS, ArbeitNow, and RemoteOK...', delay: 1400, type: 'info' },
           { text: 'Mapping disparate payloads to uniform entity format...', delay: 2400, type: 'info' },
-          { text: 'Interleaving streams & slicing top 5 candidate nodes...', delay: 3500, type: 'info' },
-          { text: 'Initiating telemetry: Processing batch of 5 with Gemini 3.1 Flash-Lite...', delay: 4800, type: 'success' }
+          { text: `Interleaving streams & slicing top ${scanLimit} candidate nodes...`, delay: 3500, type: 'info' },
+          { text: `Initiating telemetry: Processing batch of ${scanLimit} with Gemini 3.1 Flash-Lite...`, delay: 4800, type: 'success' }
         ]
       : [
           { text: 'Connecting to live Y Combinator Open Source Index...', delay: 600, type: 'info' },
@@ -125,7 +126,7 @@ export default function StartupDiscover() {
 
     try {
       const fetchUrl = activeSystem === 'GLOBAL_NETWORK_SCAN'
-        ? `${BACKEND_URL}/api/global-radar`
+        ? `${BACKEND_URL}/api/global-radar?limit=${scanLimit}`
         : `${BACKEND_URL}/api/discover-startups?country=${targetCountry}`;
 
       const response = await fetch(fetchUrl);
@@ -214,10 +215,7 @@ export default function StartupDiscover() {
     }
   };
 
-  // Auto-fetch whenever selectedCountry or activeSystem changes
-  useEffect(() => {
-    handleDiscoverStartups(selectedCountry);
-  }, [selectedCountry, activeSystem]);
+  // Auto-fetch disabled for manual scanning
 
   const handleCopySummary = async (text, index) => {
     if (!text) return;
@@ -453,6 +451,41 @@ export default function StartupDiscover() {
                   </span>
                 )}
               </div>
+            </div>
+
+            {/* Retro Terminal Control Panel */}
+            <div className="border border-emerald-400 p-4 bg-black flex flex-wrap items-center justify-between gap-4 font-mono select-none relative mb-4">
+              {/* Sharp 90-degree corner joints absolute-positioned */}
+              <span className="absolute top-0 left-0 -translate-x-[1px] -translate-y-[4px] text-emerald-400 font-bold bg-black leading-none z-10">+</span>
+              <span className="absolute top-0 right-0 translate-x-[1px] -translate-y-[4px] text-emerald-400 font-bold bg-black leading-none z-10">+</span>
+              <span className="absolute bottom-0 left-0 -translate-x-[1px] translate-y-[4px] text-emerald-400 font-bold bg-black select-none leading-none z-10">+</span>
+              <span className="absolute bottom-0 right-0 translate-x-[1px] translate-y-[4px] text-emerald-400 font-bold bg-black select-none leading-none z-10">+</span>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-emerald-400">
+                  [ PARAM: MAX_RESULTS = {scanLimit} ]
+                </span>
+                <input
+                  type="range"
+                  min="1"
+                  max="15"
+                  value={scanLimit}
+                  onChange={(e) => setScanLimit(parseInt(e.target.value, 10))}
+                  className="w-32 h-1 bg-emerald-950 accent-emerald-400 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <button
+                onClick={() => handleDiscoverStartups(selectedCountry)}
+                disabled={isDiscovering}
+                className={`px-4 py-2 border text-xs font-bold tracking-wider transition-all duration-100 cursor-pointer ${
+                  isDiscovering 
+                    ? 'bg-black text-emerald-600 border-emerald-700 animate-pulse cursor-wait'
+                    : 'bg-black text-emerald-400 border-emerald-400 hover:bg-emerald-400 hover:text-black'
+                }`}
+              >
+                [ EXECUTE: INITIATE_SCAN ]
+              </button>
             </div>
 
             {/* Display states */}
