@@ -43,7 +43,11 @@ export default function BlueprintMatrix() {
       const data = await response.json();
 
       if (response.ok) {
-        setBlueprint(data);
+        if (data && data.error) {
+          setError(data.error);
+        } else {
+          setBlueprint(data);
+        }
       } else {
         setError(data.detail || "FAILED TO RESOLVE TARGET BluePrint TELEMETRY.");
       }
@@ -113,9 +117,9 @@ export default function BlueprintMatrix() {
 
         {/* Error Display */}
         {error && (
-          <div className="border border-red-500 p-4 bg-black text-red-500 text-xs flex items-center gap-2 select-none relative animate-pulse">
-            <AlertTriangle className="w-4 h-4" />
-            <span>&gt; ALERT: {error}</span>
+          <div className="border border-red-500 p-4 bg-black text-red-500 text-xs flex items-center gap-2 select-none relative animate-pulse font-mono">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <span>&gt; FATAL_ERROR: [{error}]</span>
           </div>
         )}
 
@@ -182,6 +186,39 @@ export default function BlueprintMatrix() {
                             ))
                           ) : (
                             <span className="text-emerald-700">[ NONE ]</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Proof Nodes UI */}
+                      <div className="text-xs font-mono">
+                        <span className="text-emerald-600 font-bold block mb-1">&gt; PROOF_NODES:</span>
+                        <div className="flex flex-wrap gap-1.5 min-h-[1.25rem]">
+                          {item.proof_repos && item.proof_repos.length > 0 ? (
+                            item.proof_repos.map((repo, idx) => (
+                              <a
+                                key={idx}
+                                href={`https://github.com/${username.trim()}/${repo}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-emerald-400 font-bold hover:underline cursor-pointer transition-all duration-100"
+                                style={{
+                                  textShadow: '0 0 4px rgba(52, 211, 153, 0.6)'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.color = '#34d399';
+                                  e.target.style.textShadow = '0 0 8px rgba(52, 211, 153, 0.9)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.color = '';
+                                  e.target.style.textShadow = '0 0 4px rgba(52, 211, 153, 0.6)';
+                                }}
+                              >
+                                [{repo}]
+                              </a>
+                            ))
+                          ) : (
+                            <span className="text-emerald-800">[ NONE_DETECTED ]</span>
                           )}
                         </div>
                       </div>
