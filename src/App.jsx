@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import LandingPage from './LandingPage';
 import StartupDiscover from './StartupDiscover';
 import StartupNews from './StartupNews';
+import BlueprintMatrix from './BlueprintMatrix';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/discover" element={<StartupDiscover />} />
             <Route path="/news" element={<StartupNews />} />
+            <Route path="/blueprint" element={<BlueprintMatrix />} />
             {/* Fallback wildcard redirect to Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

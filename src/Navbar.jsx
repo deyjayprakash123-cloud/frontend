@@ -60,6 +60,19 @@ export default function Navbar() {
           >
             [ NEWS_FEED ]
           </NavLink>
+
+          <NavLink 
+            to="/blueprint" 
+            className={({ isActive }) => 
+              `px-3 py-1.5 text-xs font-bold tracking-wide transition-none cursor-pointer ${
+                isActive 
+                  ? 'bg-emerald-400 text-black border border-emerald-400 font-bold' 
+                  : 'text-emerald-400 hover:text-black hover:bg-emerald-400 border border-emerald-400/40'
+              }`
+            }
+          >
+            [ DIAGNOSTIC_BLUEPRINT ]
+          </NavLink>
         </nav>
 
       </div>
