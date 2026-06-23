@@ -35,7 +35,7 @@ export default function BlueprintMatrix() {
     }
 
     setIsAnalyzing(true);
-    setBlueprint(null);
+    setBlueprint([]);
     setError(null);
 
     try {
@@ -135,7 +135,7 @@ export default function BlueprintMatrix() {
         )}
 
         {/* Blueprint Matrix Output */}
-        {!isAnalyzing && blueprint && (
+        {!isAnalyzing && blueprint && blueprint.length > 0 && (
           <div className="space-y-4 animate-fade-in">
             <div className="text-xs font-bold text-emerald-650 tracking-wider">
               &gt; UPLINK COMPLETED. TELEMETRY DECODED. {blueprint.length} MATCH NODES ACTIVE.
@@ -143,7 +143,8 @@ export default function BlueprintMatrix() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {blueprint.map((item, index) => {
-                const isHighMatch = item.match_percentage >= 80;
+                const matchPercentage = (item.match_percentage !== undefined && item.match_percentage !== null) ? Number(item.match_percentage) : 0;
+                const isHighMatch = matchPercentage >= 80;
                 const matchColorClass = isHighMatch ? 'text-emerald-400' : 'text-amber-500';
                 const matchBorderClass = isHighMatch ? 'border-emerald-400' : 'border-amber-500/70';
                 const matchShadow = isHighMatch ? '0 0 8px rgba(52, 211, 153, 0.4)' : '0 0 8px rgba(245, 158, 11, 0.3)';
@@ -170,11 +171,18 @@ export default function BlueprintMatrix() {
                             className={`text-lg font-bold ${matchColorClass}`} 
                             style={{ textShadow: matchShadow }}
                           >
-                            {item.match_percentage}%
+                            {matchPercentage}%
                           </div>
                           <span className="text-[8px] text-emerald-700 font-mono">MATCH_RATE</span>
                         </div>
                       </div>
+
+                      {/* Startup Description */}
+                      {item.startup_description && (
+                        <p className="text-[11px] text-emerald-500/70 leading-normal line-clamp-3 italic">
+                          &gt; TARGET_SPECS: {item.startup_description}
+                        </p>
+                      )}
 
                       {/* Matching skills vectors */}
                       <div className="text-xs font-mono">
@@ -260,7 +268,7 @@ export default function BlueprintMatrix() {
         )}
 
         {/* Initial Empty Placeholder State */}
-        {!isAnalyzing && !blueprint && !error && (
+        {!isAnalyzing && (!blueprint || blueprint.length === 0) && !error && (
           <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-emerald-400 bg-black min-h-[300px] space-y-3">
             <Terminal className="w-8 h-8 text-emerald-400/70" />
             <div className="text-emerald-750 text-xs tracking-wider animate-pulse">
