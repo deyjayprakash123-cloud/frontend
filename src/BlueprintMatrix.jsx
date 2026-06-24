@@ -311,41 +311,50 @@ export default function BlueprintMatrix() {
                         </div>
                       </div>
 
-                      {/* TERMINAL: LIVE_CODE_AUDIT_STREAM */}
-                      {item.audited_file && (
-                        <div className="text-xs font-mono border border-dashed border-emerald-500/40 p-3 bg-black/60 space-y-2.5">
-                          <span className="text-emerald-400 font-bold block">
-                            [ TERMINAL: LIVE_CODE_AUDIT_STREAM ]
-                          </span>
-                          <div className="text-[11px] text-emerald-300">
-                            <span className="text-emerald-600 block">&gt; TARGET_NODE:</span>
-                            <span className="font-bold text-emerald-200">{item.audited_file}</span>
-                          </div>
-                          
-                          <div className="text-[11px] text-emerald-300 leading-relaxed">
-                            <span className="text-emerald-600 block">&gt; CRITIQUE FROM TECH LEAD:</span>
-                            <span className="italic text-emerald-100">"{item.code_review_log}"</span>
-                          </div>
-
-                          <div className="text-[11px] leading-relaxed">
-                            <span className="text-emerald-600 block">&gt; EXPECTED_INTERVIEW_CHALLENGE:</span>
-                            <span className="text-amber-400 font-bold">"{item.interview_question}"</span>
-                          </div>
-
-                          {item.recommended_refactor && (
-                            <details className="text-[11px] text-emerald-400 group cursor-pointer">
-                              <summary className="font-bold select-none hover:text-emerald-350 list-none flex items-center gap-1">
-                                <span>[ VIEW: RECOMMENDED_REFACTOR_SCRIPT ]</span>
-                              </summary>
-                              <div className="mt-2 bg-black border border-emerald-500/20 p-2 overflow-x-auto text-[10px] text-emerald-300 font-mono whitespace-pre select-text cursor-text">
-                                <pre className="leading-snug">
-                                  <code>{item.recommended_refactor}</code>
-                                </pre>
+                      {/* OPEN_SOURCE_BACKDOOR: LIVE_CONTRIBUTION_GATE */}
+                      <div className="text-xs font-mono border border-dashed border-emerald-500/40 p-3 bg-black/60 space-y-2.5">
+                        <span className="text-emerald-400 font-bold block" style={{ textShadow: '0 0 4px rgba(52, 211, 153, 0.4)' }}>
+                          [ OPEN_SOURCE_BACKDOOR: LIVE_CONTRIBUTION_GATE ]
+                        </span>
+                        
+                        <div className="space-y-1.5">
+                          {item.backdoor_issues && item.backdoor_issues.length > 0 ? (
+                            item.backdoor_issues.map((issue, idx) => (
+                              <div key={idx} className="text-[11px] text-emerald-300 flex items-start gap-1">
+                                <span className="text-emerald-600 shrink-0">&gt; LIVE_ISSUE:</span>
+                                <a
+                                  href={issue.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-400 font-bold hover:underline cursor-pointer leading-tight break-all"
+                                  style={{ textShadow: '0 0 4px rgba(52, 211, 153, 0.6)' }}
+                                >
+                                  [Click to View Issue: {issue.title}]
+                                </a>
                               </div>
-                            </details>
+                            ))
+                          ) : (
+                            <div className="text-[11px] text-emerald-650 flex items-start gap-1">
+                              <span>&gt; NO_ACTIVE_BACKDOOR_ISSUES_FOUND:</span>
+                              <a
+                                href={item.github_url || `https://github.com`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-amber-500 font-bold hover:underline cursor-pointer"
+                              >
+                                [SUBMIT_COLD_PR_INSTEAD]
+                              </a>
+                            </div>
                           )}
                         </div>
-                      )}
+
+                        <div className="text-[11px] leading-relaxed border-t border-emerald-500/20 pt-2">
+                          <span className="text-emerald-600 font-bold block mb-0.5">&gt; DIRECTIVE_ACTION_PLAN:</span>
+                          <span className="text-emerald-100 font-bold" style={{ textShadow: '0 0 6px rgba(52, 211, 153, 0.4)' }}>
+                            {item.action_plan}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Diagnostic log note */}
